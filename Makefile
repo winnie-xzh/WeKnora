@@ -1,4 +1,4 @@
-.PHONY: help build run test clean docker-build-app docker-build-docreader docker-build-frontend docker-build-all docker-run migrate-up migrate-down docker-restart docker-stop start-all stop-all start-ollama stop-ollama build-images build-images-app build-images-docreader build-images-frontend clean-images check-env list-containers pull-images show-platform dev-start dev-stop dev-restart dev-logs dev-status dev-app dev-frontend docs install-swagger build-lite run-lite package-lite
+.PHONY: help build run test clean docker-build-app docker-build-docreader docker-build-frontend docker-build-all docker-run migrate-up migrate-down docker-restart docker-stop start-all stop-all start-ollama stop-ollama build-images build-images-app build-images-docreader build-images-frontend clean-images check-env list-containers pull-images show-platform dev-start dev-stop dev-restart dev-logs dev-status dev-app dev-frontend docs install-swagger build-lite run-lite package-lite quick-build-app
 
 # Show help
 help:
@@ -12,6 +12,7 @@ help:
 	@echo ""
 	@echo "Docker 命令:"
 	@echo "  docker-build-app       构建应用 Docker 镜像 (wechatopenai/weknora-app)"
+	@echo "  quick-build-app      快速重建 app 二进制（热替换到运行中容器，跳过完整镜像构建）"\
 	@echo "  docker-build-docreader 构建文档读取器镜像 (wechatopenai/weknora-docreader)"
 	@echo "  docker-build-frontend  构建前端镜像 (wechatopenai/weknora-ui)"
 	@echo "  docker-build-all       构建所有 Docker 镜像"
@@ -113,6 +114,10 @@ docker-build-app:
 		-f docker/Dockerfile.app -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
 
 # Build docreader Docker image
+# Quick-rebuild app — skip the final Debian stage, hot-swap binary into running container
+quick-build-app:
+	./scripts/quick_build_app.sh
+
 docker-build-docreader:
 	docker build --platform $(PLATFORM) -f docker/Dockerfile.docreader -t wechatopenai/weknora-docreader:latest .
 

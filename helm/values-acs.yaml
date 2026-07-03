@@ -1,0 +1,63 @@
+# WeKnora ACS Deployment Values
+global:
+  storageClass: alicloud-disk-topology-alltype
+  imagePullSecrets:
+    - name: regcred
+
+app:
+  replicaCount: 1
+  image:
+    repository: cri-wnce2b2kj1t5pjwx-registry.cn-shanghai.cr.aliyuncs.com/ai/weknora-app
+    tag: latest
+    pullPolicy: Always
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+  env:
+    GIN_MODE: release
+    RETRIEVE_DRIVER: postgres
+    STORAGE_TYPE: local
+    LOCAL_STORAGE_BASE_DIR: /data/files
+    AUTO_RECOVER_DIRTY: "true"
+    STREAM_MANAGER_TYPE: redis
+    CONCURRENCY_POOL_SIZE: "5"
+    ENABLE_GRAPH_RAG: "false"
+    TZ: Asia/Shanghai
+    SSRF_WHITELIST_EXTRA: "*"
+  extraEnv: []
+
+frontend:
+  replicaCount: 1
+  image:
+    repository: cri-wnce2b2kj1t5pjwx-registry.cn-shanghai.cr.aliyuncs.com/ai/weknora-ui
+    tag: latest
+    pullPolicy: Always
+
+docreader:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: cri-wnce2b2kj1t5pjwx-registry.cn-shanghai.cr.aliyuncs.com/ai/weknora-docreader
+    tag: latest
+    pullPolicy: Always
+
+postgresql:
+  enabled: true
+  persistence:
+    size: 10Gi
+
+redis:
+  enabled: true
+  persistence:
+    size: 1Gi
+
+dataFiles:
+  persistence:
+    size: 10Gi
+
+ingress:
+  enabled: false

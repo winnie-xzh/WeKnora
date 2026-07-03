@@ -19,7 +19,7 @@ RUN if [ -n "$APK_MIRROR_ARG" ]; then \
         sed -i "s@deb.debian.org@${APK_MIRROR_ARG}@g" /etc/apt/sources.list.d/debian.sources; \
     fi && \
     apt-get update && \
-    apt-get install -y git build-essential libsqlite3-dev
+    apt-get install -y --no-install-recommends git build-essential libsqlite3-dev curl xz-utils
 
 # Install migrate tool
 RUN go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
@@ -47,6 +47,12 @@ ENV GO_VERSION=${GO_VERSION_ARG}
 RUN --mount=type=cache,target=/go/pkg/mod make build-prod
 RUN --mount=type=cache,target=/go/pkg/mod cp -r /go/pkg/mod/github.com/yanyiwu/ /app/yanyiwu/
 
+# Compress the Go binary with UPX (save ~150MB)
+RUN curl -sL "https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-arm64_linux.tar.xz" -o /tmp/upx.tar.xz && \
+    tar -xJf /tmp/upx.tar.xz -C /tmp && \
+    /tmp/upx-4.2.4-arm64_linux/upx --best /app/WeKnora && \
+    rm -rf /tmp/upx*
+
 # Final stage
 FROM debian:12.12-slim
 
@@ -68,10 +74,9 @@ RUN if [ -n "$APK_MIRROR_ARG" ]; then \
     fi && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-        build-essential postgresql-client default-mysql-client tzdata sed curl bash vim wget \
+        ca-certificates postgresql-client tzdata sed curl bash wget \
         libsqlite3-0 \
-        python3 python3-pip python3-dev libffi-dev libssl-dev \
-        nodejs npm \
+        python3 python3-pip \
         gosu \
         ffmpeg && \
     python3 -m pip install --break-system-packages --upgrade pip setuptools wheel && \
@@ -106,7 +111,8 @@ COPY --from=builder /app/WeKnora .
 COPY --from=builder /app/scripts/docker-entrypoint.sh ./scripts/docker-entrypoint.sh
 
 # Make scripts executable
-RUN chmod +x ./scripts/*.sh
+RUN chmod +x ./scripts/*.sh && \
+    rm -rf /usr/share/doc /usr/share/man /usr/share/locale /usr/share/info /var/log/* 2>/dev/null; true
 
 # Expose ports
 EXPOSE 8080

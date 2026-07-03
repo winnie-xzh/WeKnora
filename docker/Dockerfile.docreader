@@ -1,7 +1,7 @@
 # =========================
 # 构建阶段（轻量化：仅文档解析 + 图片提取，无 OCR/VLM）
 # =========================
-FROM python:3.10.18-bookworm AS builder
+FROM python:3.10.18-slim-bookworm AS builder
 
 ARG APT_MIRROR=""
 RUN if [ -n "$APT_MIRROR" ]; then \
@@ -79,7 +79,7 @@ RUN chmod +x docreader/scripts/generate_proto.sh && \
 # =========================
 # 运行阶段（轻量化）
 # =========================
-FROM python:3.10.18-bookworm AS runner
+FROM python:3.10.18-slim-bookworm AS runner
 
 ARG APT_MIRROR=""
 RUN if [ -n "$APT_MIRROR" ]; then \
@@ -90,16 +90,12 @@ RUN if [ -n "$APT_MIRROR" ]; then \
 WORKDIR /app
 
 # 安装运行时依赖（已移除 OCR/PaddleOCR 相关依赖）
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libjpeg62-turbo \
     wget \
-    gnupg \
-    openjdk-17-jre-headless \
     libgl1 \
     libglib2.0-0 \
     antiword \
-    tar \
-    dpkg \
     libxinerama1 \
     libfontconfig1 \
     libdbus-glib-1-2 \
@@ -107,7 +103,7 @@ RUN apt-get update && apt-get install -y \
     libcups2 \
     libglu1-mesa \
     libsm6 \
-    libreoffice \
+    libreoffice-writer libreoffice-calc libreoffice-impress \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
@@ -134,6 +130,15 @@ RUN if [ -z "$TARGETARCH" ]; then \
     esac && \
     wget -qO/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-${ARCH} && \
     chmod +x /bin/grpc_health_probe
+
+# 清理运行时不需要的依赖（Java、gstreamer 媒体库、字体、wget）
+RUN apt-get remove -y \
+    wget \
+    'gstreamer1.0-*' \
+    libgstreamer* \
+    'fonts-*' \
+    2>/dev/null; true && \
+    rm -rf /var/lib/apt/lists/*
 
 # 从构建阶段复制已安装的依赖和生成的代码
 ENV VIRTUAL_ENV=/app/.venv

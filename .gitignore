@@ -28,6 +28,14 @@ temp/
 logs/
 *.pid
 
+# 构建产出物 - 大二进制文件
+*.tar
+*.tar.gz
+
+# 部署相关 - 敏感 / 本地配置
+acs-kubeconfig
+config.yaml
+
 WeKnora
 WeKnora-lite
 cmd/desktop/build/bin/

@@ -919,6 +919,9 @@ var (
 type ssrfWhitelistConfig struct {
 	exactHosts  map[string]bool // lowercase exact hostnames / IPs
 	suffixHosts []string        // suffix matches (from "*.example.com" → ".example.com")
+	// matchAll bypasses all SSRF checks when set. Enable by adding bare "*" to
+	// SSRF_WHITELIST or SSRF_WHITELIST_EXTRA (e.g. SSRF_WHITELIST_EXTRA=*).
+	matchAll    bool
 	cidrNets    []*net.IPNet    // CIDR ranges
 }
 
@@ -1013,6 +1016,12 @@ func parseSSRFWhitelistRaw(raw string) *ssrfWhitelistConfig {
 			cfg.suffixHosts = append(cfg.suffixHosts, suffix)
 			continue
 		}
+		// Catch-all bare "*" — accept before the mid-string "*" rejection below.
+		if entry == "*" {
+			log.Printf("[ssrf-whitelist] bare * enables all-host whitelist — operator has opted out of hostname filtering")
+			cfg.matchAll = true
+			continue
+		}
 		// Reject mid-string wildcards like "foo.*.bar" — they look
 		// useful but neither parseSSRFWhitelistRaw nor IsSSRFWhitelisted
 		// implement glob matching, so the entry would silently never
@@ -1088,6 +1097,9 @@ func IsSSRFWhitelisted(hostname string) bool {
 	wl := loadSSRFWhitelist()
 	if wl == nil {
 		return false
+	}
+	if wl.matchAll {
+		return true
 	}
 	lower := strings.ToLower(hostname)
 
