@@ -1,23 +1,27 @@
-.PHONY: proto build run docker-build docker-run clean
+.PHONY: proto run docker-build docker-build-push clean
 
 # 生成 protobuf 代码
 proto:
 	@echo "Generating protobuf code..."
-	@sh ./scripts/generate_proto.sh
+	@cd /Users/winnie/WeKnora && bash docreader/scripts/generate_proto.sh
 
-# 构建 Go 客户端
-build:
-	@echo "Building Go client..."
-	@go build -o bin/client ./src/client
-
-# 运行 Python 服务
+# 运行 Python 服务（本地开发用）
 run:
-	@echo "Running Python server..."
-	@python src/server/server.py
+	@echo "Running Python server (PYTHONPATH=/Users/winnie/WeKnora)..."
+	@PYTHONPATH=/Users/winnie/WeKnora uv run --directory /Users/winnie/WeKnora/docreader python -m docreader.main
+
+docker-build:
+	@echo "Building Docker image..."
+	@cd /Users/winnie/WeKnora && docker build -t wechatopenai/weknora-docreader:latest -f docker/Dockerfile.docreader .
+
+docker-build-push:
+	@echo "Building and saving Docker image..."
+	@cd /Users/winnie/WeKnora && docker build -t wechatopenai/weknora-docreader:latest -f docker/Dockerfile.docreader .
+	@docker save wechatopenai/weknora-docreader:latest | gzip > /tmp/weknora-docreader.tar.gz
+	@echo "Image saved to /tmp/weknora-docreader.tar.gz"
 
 # 清理
 clean:
 	@echo "Cleaning up..."
-	@rm -rf bin/
 	@find . -name "*.pyc" -delete
-	@find . -name "__pycache__" -delete 
+	@find . -name "__pycache__" -delete

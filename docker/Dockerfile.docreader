@@ -10,6 +10,9 @@ RUN if [ -n "$APT_MIRROR" ]; then \
     fi
 
 WORKDIR /app
+ENV PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
+ENV UV_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
+RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/
 
 # 安装构建依赖
 RUN apt-get update && apt-get install -y \
@@ -66,7 +69,7 @@ RUN if [ -z "$TARGETARCH" ]; then \
 # 复制依赖文件
 COPY docreader/pyproject.toml docreader/uv.lock ./
 RUN pip install uv --break-system-packages && \
-    python -m uv sync --locked --no-dev
+    python -m uv sync --no-dev
 
 # 复制源代码和生成脚本
 COPY docreader docreader
@@ -88,6 +91,7 @@ RUN if [ -n "$APT_MIRROR" ]; then \
     fi
 
 WORKDIR /app
+ENV PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
 
 # 安装运行时依赖（已移除 OCR/PaddleOCR 相关依赖）
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -128,37 +132,32 @@ RUN if [ -z "$TARGETARCH" ]; then \
         "arm") ARCH="arm" ;; \
         *) echo "Unsupported architecture: $TARGETARCH" && exit 1 ;; \
     esac && \
-    wget -qO/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-${ARCH} && \
-    chmod +x /bin/grpc_health_probe
+    LOCAL_PROBE="/app/packages/grpc_health_probe-linux-amd64" && \
+    if [ -f "$LOCAL_PROBE" ]; then \
+        echo "Using local grpc_health_probe" && \
+        cp "$LOCAL_PROBE" /bin/grpc_health_probe; \
+    else \
+        echo "Downloading grpc_health_probe from GitHub..." && \
+        wget -qO/bin/grpc_health_probe --timeout=30 \
+            https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 || \
+        echo "Primary download failed, trying mirror..." && \
+        wget -qO/bin/grpc_health_probe --timeout=30 \
+            https://ghproxy.com/https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 || \
+        echo "WARNING: Failed to download grpc_health_probe, healthcheck will be unavailable"; \
+    fi && \
+    if [ -f /bin/grpc_health_probe ]; then chmod +x /bin/grpc_health_probe; fi
 
-# 清理运行时不需要的依赖（Java、gstreamer 媒体库、字体、wget）
-RUN apt-get remove -y \
-    wget \
-    'gstreamer1.0-*' \
-    libgstreamer* \
-    'fonts-*' \
-    2>/dev/null; true && \
-    rm -rf /var/lib/apt/lists/*
+# 从构建阶段复制 venv 和源代码
+COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /app/docreader /app/docreader
 
-# 从构建阶段复制已安装的依赖和生成的代码
-ENV VIRTUAL_ENV=/app/.venv
-COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
-ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
+# 设置环境变量
+ENV PATH="/app/.venv/bin:${PATH}" \
+    PYTHONDONTWRITEBYTECODE=1
 
-COPY --from=builder /usr/local/bin /usr/local/bin
-
-# 安装 Playwright 浏览器（网页解析）
-RUN python -m playwright install webkit
-RUN python -m playwright install-deps webkit
-
-COPY docreader/pyproject.toml docreader/uv.lock ./
-COPY --from=builder /app/docreader docreader
-
-# 创建共享临时图片目录
-RUN mkdir -p /tmp/docreader
-
-# 暴露 gRPC 端口
 EXPOSE 50051
 
-# 直接运行 Python 服务（日志输出到 stdout/stderr）
-CMD ["uv", "run", "-m", "docreader.main"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD grpc_health_probe -addr=localhost:50051
+
+CMD ["python", "-m", "docreader.main"]
