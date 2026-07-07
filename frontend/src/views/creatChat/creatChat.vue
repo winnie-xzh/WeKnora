@@ -373,33 +373,42 @@ const handleKBEditorSuccess = (kbId: string) => {
     }
 }
 
-@media (max-width: 1045px) {
-    .answers-input {
-        transform: translateX(-250px);
+
+
+/* ===== 移动端：内容区置底 ===== */
+@media (max-width: 768px) {
+    .dialogue-wrap {
+        justify-content: flex-end;
+        align-items: stretch;
     }
 
-    :deep(.t-textarea__inner) {
-        width: 500px !important;
-    }
-}
-
-@media (max-width: 750px) {
-    .answers-input {
-        transform: translateX(-250px);
+    .dialogue-answers {
+        justify-content: flex-end;
+        gap: 12px;
+        padding-bottom: 16px;
     }
 
-    :deep(.t-textarea__inner) {
-        width: 340px !important;
-    }
-}
-
-@media (max-width: 600px) {
-    .answers-input {
-        transform: translateX(-250px);
+    .dialogue-title {
+        display: none;
     }
 
-    :deep(.t-textarea__inner) {
-        width: 300px !important;
+    .suggested-questions-container {
+        margin-bottom: 0;
+        padding: 0 12px;
+    }
+
+    :deep(.answers-input) {
+        position: static;
+        transform: none;
+        left: auto;
+        bottom: auto;
+        width: 100%;
+        padding: 0 12px;
+        box-sizing: border-box;
+    }
+
+    :deep(.answers-input .t-textarea__inner) {
+        width: 100% !important;
     }
 }
 </style>

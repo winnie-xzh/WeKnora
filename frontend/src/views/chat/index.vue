@@ -1214,6 +1214,42 @@ onBeforeRouteUpdate((to, from, next) => {
 
 @import '../../components/css/suggested-questions.less';
 
+/* 移动端：空对话时推荐问题和输入框置底 */
+@media (max-width: 768px) {
+    .chat {
+        padding: 0;
+        max-width: 100vw;
+        min-width: 0;
+    }
+
+    .chat_scroll_box {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .msg_list {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        gap: 8px;
+        max-width: 100%;
+    }
+
+    .msg_list .suggested-questions-container {
+        margin-top: auto;
+        padding: 0 12px;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .input-container {
+        max-width: 100%;
+        padding: 0 12px env(safe-area-inset-bottom, 16px);
+        min-height: auto;
+    }
+}
+
 .suggested-questions-container {
     transition: min-height 0.3s @suggested-ease;
 }

@@ -1,6 +1,36 @@
 <template>
-    <div class="main" ref="dropzone">
-        <Menu></Menu>
+    <div class="main" :class="{ 'is-mobile-layout': isMobile }" ref="dropzone">
+        <!-- 移动端顶部栏 -->
+        <div v-if="isMobile" class="mobile-header">
+            <div class="mobile-header-inner">
+                <div class="mobile-header-left" @click="toggleMobileSidebar">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="6" x2="21" y2="6"/>
+                        <line x1="3" y1="12" x2="21" y2="12"/>
+                        <line x1="3" y1="18" x2="21" y2="18"/>
+                    </svg>
+                </div>
+                <div class="mobile-header-center">
+                    <img class="mobile-logo" src="@/assets/img/weknora.png" alt="WeKnora">
+                </div>
+                <div class="mobile-header-right">
+                    <UserMenu />
+                </div>
+            </div>
+        </div>
+        <!-- 桌面端侧边栏 -->
+        <Menu v-if="!isMobile" />
+        <!-- 移动端侧边栏抽屉 -->
+        <template v-if="isMobile">
+            <transition name="mobile-sidebar-fade">
+                <div v-if="showMobileSidebar" class="mobile-sidebar-backdrop" @click="closeMobileSidebar" />
+            </transition>
+            <transition name="mobile-sidebar-slide">
+                <div v-if="showMobileSidebar" class="mobile-sidebar-drawer">
+                    <Menu />
+                </div>
+            </transition>
+        </template>
         <div v-if="isRouterAlive" class="platform-route-outlet">
             <RouterView />
         </div>
@@ -21,7 +51,8 @@
 </template>
 <script setup lang="ts">
 import Menu from '@/components/menu.vue'
-import { ref, onMounted, onUnmounted, nextTick, provide, watch } from 'vue';
+import UserMenu from '@/components/UserMenu.vue'
+import { ref, onMounted, onUnmounted, nextTick, provide, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUIStore } from '@/stores/ui'
 import useKnowledgeBase from '@/hooks/useKnowledgeBase'
@@ -44,6 +75,20 @@ const commandPaletteStore = useCommandPaletteStore();
 let ismask = ref(false)
 let uploadInput = ref();
 const { t } = useI18n();
+
+const isMobile = ref(false)
+const showMobileSidebar = ref(false)
+
+const toggleMobileSidebar = () => {
+    showMobileSidebar.value = !showMobileSidebar.value
+    if (showMobileSidebar.value) {
+        uiStore.expandSidebar()
+    }
+}
+
+const closeMobileSidebar = () => {
+    showMobileSidebar.value = false
+}
 
 const isRouterAlive = ref(true)
 const reloadApp = () => {
@@ -74,7 +119,10 @@ const MOBILE_MEDIA_QUERY = '(max-width: 768px)'
 let mobileMediaQuery: MediaQueryList | null = null
 const handleMobileMediaChange = (e: MediaQueryListEvent | MediaQueryList) => {
   if (e.matches) {
-    uiStore.collapseSidebar()
+    isMobile.value = true
+    showMobileSidebar.value = false
+  } else {
+    isMobile.value = false
   }
 }
 
@@ -279,8 +327,7 @@ onUnmounted(() => {
     align-items: stretch;
     width: 100%;
     height: 100%;
-   min-width: 600px;
-    min-width: 320px;
+    min-width: 0;
     min-height: 0;
     /* 统一整页背景，让左侧菜单与右侧内容区视觉连贯 */
     background: var(--td-bg-color-container);
@@ -294,6 +341,194 @@ onUnmounted(() => {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+}
+
+.main.is-mobile-layout {
+    flex-direction: column;
+    min-width: 0;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+.main.is-mobile-layout .platform-route-outlet {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 移动端顶部栏 */
+.mobile-header {
+    flex-shrink: 0;
+    background: var(--td-bg-color-container);
+    border-bottom: 1px solid var(--td-component-stroke);
+    z-index: 100;
+    position: sticky;
+    top: 0;
+    width: 100%;
+}
+
+html.wails-desktop .mobile-header {
+    padding-top: 30px;
+}
+
+.mobile-header-inner {
+    display: flex;
+    align-items: center;
+    height: 48px;
+    padding: 0 12px;
+    gap: 12px;
+    box-sizing: border-box;
+}
+
+.mobile-header-left {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--td-text-color-primary);
+    flex-shrink: 0;
+    transition: background-color 0.15s ease;
+}
+
+.mobile-header-left:active {
+    background: var(--td-bg-color-container-hover);
+}
+
+.mobile-header-left svg {
+    display: block;
+}
+
+.mobile-header-center {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.mobile-logo {
+    height: 22px;
+    width: auto;
+    object-fit: contain;
+}
+
+.mobile-header-right {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+/* 移动端顶部栏用户菜单：仅显示头像，下拉菜单从顶部向下弹出 */
+.mobile-header-right .user-menu {
+    position: static;
+}
+
+.mobile-header-right .user-button {
+    justify-content: center;
+    padding: 2px 2px;
+    gap: 0;
+}
+
+.mobile-header-right .user-info,
+.mobile-header-right .dropdown-icon {
+    display: none !important;
+}
+
+.mobile-header-right .user-avatar {
+    width: 26px;
+    height: 26px;
+}
+
+.mobile-header-right .user-avatar .avatar-placeholder {
+    font-size: 13px;
+}
+
+.mobile-header-right .user-dropdown {
+    top: calc(100% + 6px);
+    bottom: auto;
+    left: auto;
+    right: -4px;
+    min-width: 220px;
+}
+
+/* 移动端侧边栏遮罩 */
+.mobile-sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 900;
+}
+
+/* 移动端侧边栏抽屉 */
+.mobile-sidebar-drawer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 280px;
+    max-width: 85vw;
+    z-index: 901;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background: var(--td-bg-color-sidebar, var(--td-bg-color-container));
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.12);
+}
+
+.mobile-sidebar-drawer .aside_box {
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    border-right: none;
+    border-radius: 0;
+    flex: 1;
+}
+
+.mobile-sidebar-drawer .sidebar-toggle,
+.mobile-sidebar-drawer .sidebar-toggle-item {
+    display: none !important;
+}
+
+.mobile-sidebar-drawer .sidebar-drag-handle {
+    display: none !important;
+}
+
+.mobile-sidebar-drawer .menu_bottom {
+    display: none !important;
+}
+
+/* 动画 */
+.mobile-sidebar-fade-enter-active,
+.mobile-sidebar-fade-leave-active {
+    transition: opacity 0.22s ease;
+}
+
+.mobile-sidebar-fade-enter-from,
+.mobile-sidebar-fade-leave-to {
+    opacity: 0;
+}
+
+.mobile-sidebar-slide-enter-active,
+.mobile-sidebar-slide-leave-active {
+    transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.mobile-sidebar-slide-enter-from,
+.mobile-sidebar-slide-leave-to {
+    transform: translateX(-100%);
+}
+
+/* 深色模式 logo 反色 */
+html[theme-mode="dark"] .mobile-logo {
+    filter: invert(1) hue-rotate(180deg);
 }
 
 .upload-mask {

@@ -13,6 +13,7 @@ import { stopSession } from '@/api/chat';
 import { useOrganizationStore } from '@/stores/organization';
 import KnowledgeBaseSelector from './KnowledgeBaseSelector.vue';
 import MentionSelector from './MentionSelector.vue';
+import AgentAvatar from './AgentAvatar.vue';
 import AgentSelector from './AgentSelector.vue';
 import { getCaretCoordinates } from '@/utils/caret';
 import { getRootZoom, rectToCssPx, cssViewportSize } from '@/utils/zoom';
@@ -2480,16 +2481,11 @@ defineExpose({
       <div class="control-bar" :class="{ 'is-embedded': embeddedMode }">
         <!-- 左侧控制按钮 -->
         <div class="control-left" v-if="!embeddedMode">
-          <!-- Agent 模式切换按钮 -->
-          <div ref="agentModeButtonRef" class="control-btn agent-mode-btn" :class="{
-            'is-normal': !isCustomAgent && !isAgentEnabled,
-            'is-agent': !isCustomAgent && isAgentEnabled,
-            'is-custom': isCustomAgent
-          }" @click.stop="toggleAgentModeSelector">
-            <span class="agent-mode-text">
-              {{ selectedAgent.name || (isAgentEnabled ? $t('input.agentMode') : $t('input.normalMode')) }}
-            </span>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" class="dropdown-arrow"
+          <!-- Agent 模式切换按钮（图标按钮） -->
+          <div ref="agentModeButtonRef" class="control-btn agent-switch-btn"
+            @click.stop="toggleAgentModeSelector">
+            <AgentAvatar :name="selectedAgent.name || (isAgentEnabled ? $t('input.agentMode') : $t('input.normalMode'))" size="small" />
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor" class="dropdown-arrow"
               :class="{ 'rotate': showAgentModeSelector }">
               <path d="M2.5 4.5L6 8L9.5 4.5H2.5Z" />
             </svg>
@@ -2595,15 +2591,14 @@ defineExpose({
             </div>
           </t-tooltip>
 
-          <!-- 模型显示 -->
+          <!-- 模型选择（图标按钮） -->
           <t-tooltip :content="isModelLockedByAgent ? $t('input.modelLockedByAgent') : ''"
             :disabled="!isModelLockedByAgent">
             <div class="model-display" :class="{ 'agent-controlled': isModelLockedByAgent }">
-              <div ref="modelButtonRef" class="model-selector-trigger" @click.stop="toggleModelSelector">
-                <span class="model-selector-name">
-                  {{ selectedModelDisplayName }}
-                </span>
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" class="model-dropdown-arrow"
+              <div ref="modelButtonRef" class="control-btn model-switch-btn" @click.stop="toggleModelSelector"
+                :class="{ 'agent-controlled': isModelLockedByAgent }">
+                <t-icon name="chat" size="16px" class="model-switch-icon" />
+                <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor" class="dropdown-arrow"
                   :class="{ 'rotate': showModelSelector }">
                   <path d="M2.5 4.5L6 8L9.5 4.5H2.5Z" />
                 </svg>
@@ -2976,38 +2971,23 @@ const getImgSrc = (url: string) => {
   }
 }
 
-.agent-mode-btn {
+.agent-switch-btn {
   height: 28px;
-  padding: 0 10px;
-  min-width: auto;
-  font-weight: 500;
-  position: relative;
-  border: .5px solid var(--td-component-border, #e7e7e7);
-}
-
-.agent-icon {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-}
-
-.agent-btn-icon {
+  width: 36px;
+  padding: 0 4px;
+  min-width: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 5px;
-  flex-shrink: 0;
-  color: var(--td-text-color-secondary, #666);
+  gap: 1px;
+  border: .5px solid var(--td-component-border, #e7e7e7);
+  border-radius: 6px;
+  position: relative;
 }
 
-.agent-mode-text {
-  font-size: 13px;
-  color: var(--td-text-color-secondary, #666);
-  font-weight: 500;
-  white-space: nowrap;
-  margin: 0 4px;
+.agent-switch-btn .dropdown-arrow {
+  color: var(--td-text-color-placeholder, #999);
+  flex-shrink: 0;
 }
 
 .control-icon {
@@ -3372,65 +3352,40 @@ const getImgSrc = (url: string) => {
   align-items: center;
   margin-left: auto;
   flex-shrink: 0;
-
-  &.agent-controlled {
-    .model-selector-trigger {
-      cursor: not-allowed;
-      opacity: 0.5;
-    }
-  }
 }
 
-.model-selector-trigger {
+.model-switch-btn {
+  height: 28px;
+  width: 36px;
+  padding: 0 4px;
+  min-width: 36px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 2px 8px;
-  min-width: 100px;
-  height: 22px;
-  border-radius: 6px;
+  justify-content: center;
+  gap: 1px;
   border: .5px solid var(--td-component-border, #e7e7e7);
-  transition: background 0.12s, border-color 0.12s;
+  border-radius: 6px;
+  position: relative;
   cursor: pointer;
 
   &:hover {
     background: var(--td-bg-color-secondarycontainer-hover, #e6e6e6);
   }
 
-  &.disabled {
-    opacity: 0.5;
+  &.agent-controlled {
     cursor: not-allowed;
-
-    &:hover {
-      background: var(--td-bg-color-secondarycontainer, #f5f5f5);
-    }
+    opacity: 0.5;
   }
 }
 
-.model-selector-name {
-  flex: 1;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--td-text-color-secondary, #666);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.model-dropdown-arrow {
-  width: 10px;
-  height: 10px;
+.model-switch-btn .dropdown-arrow {
   color: var(--td-text-color-placeholder, #999);
   flex-shrink: 0;
-  transition: transform 0.12s;
-
-  &.rotate {
-    transform: rotate(180deg);
-  }
 }
 
-.model-selector-trigger.disabled .model-dropdown-arrow {
-  color: var(--td-text-color-placeholder, #999);
+.model-switch-icon {
+  color: var(--td-text-color-secondary, #666);
+  flex-shrink: 0;
 }
 
 .model-selector-overlay {
