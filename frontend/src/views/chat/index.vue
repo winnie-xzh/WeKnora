@@ -1217,7 +1217,7 @@ onBeforeRouteUpdate((to, from, next) => {
 /* 移动端：空对话时推荐问题和输入框置底 */
 @media (max-width: 768px) {
     .chat {
-        padding: 0;
+        padding: 0 16px;
         max-width: 100vw;
         min-width: 0;
     }
@@ -1238,14 +1238,13 @@ onBeforeRouteUpdate((to, from, next) => {
 
     .msg_list .suggested-questions-container {
         margin-top: auto;
-        padding: 0 12px;
         width: 100%;
         max-width: 100%;
     }
 
     .input-container {
         max-width: 100%;
-        padding: 0 12px env(safe-area-inset-bottom, 16px);
+        padding: 0 0 env(safe-area-inset-bottom, 16px);
         min-height: auto;
     }
 }

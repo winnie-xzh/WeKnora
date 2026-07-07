@@ -394,7 +394,7 @@ const handleKBEditorSuccess = (kbId: string) => {
 
     .suggested-questions-container {
         margin-bottom: 0;
-        padding: 0 12px;
+        padding: 0 16px;
     }
 
     :deep(.answers-input) {
@@ -403,7 +403,7 @@ const handleKBEditorSuccess = (kbId: string) => {
         left: auto;
         bottom: auto;
         width: 100%;
-        padding: 0 12px;
+        padding: 0 16px;
         box-sizing: border-box;
     }
 
