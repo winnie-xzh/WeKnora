@@ -7,7 +7,7 @@ global:
 app:
   replicaCount: 1
   image:
-    repository: cri-wnce2b2kj1t5pjwx-registry.cn-shanghai.cr.aliyuncs.com/ai/weknora-app
+    repository: cri-j5gbox3b9osyqjxy-registry.cn-guangzhou.cr.aliyuncs.com/ai/weknora-app
     tag: latest
     pullPolicy: Always
   resources:
@@ -33,7 +33,7 @@ app:
 frontend:
   replicaCount: 1
   image:
-    repository: cri-wnce2b2kj1t5pjwx-registry.cn-shanghai.cr.aliyuncs.com/ai/weknora-ui
+    repository: cri-j5gbox3b9osyqjxy-registry.cn-guangzhou.cr.aliyuncs.com/ai/weknora-ui
     tag: latest
     pullPolicy: Always
 
@@ -41,23 +41,23 @@ docreader:
   enabled: true
   replicaCount: 1
   image:
-    repository: cri-wnce2b2kj1t5pjwx-registry.cn-shanghai.cr.aliyuncs.com/ai/weknora-docreader
+    repository: cri-j5gbox3b9osyqjxy-registry.cn-guangzhou.cr.aliyuncs.com/ai/weknora-docreader
     tag: latest
     pullPolicy: Always
 
 postgresql:
   enabled: true
   persistence:
-    size: 10Gi
+    size: 20Gi
 
 redis:
   enabled: true
   persistence:
-    size: 1Gi
+    size: 20Gi
 
 dataFiles:
   persistence:
-    size: 10Gi
+    size: 20Gi
 
 ingress:
   enabled: false

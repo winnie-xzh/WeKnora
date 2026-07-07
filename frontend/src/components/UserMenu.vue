@@ -120,7 +120,7 @@
         </div>
         <!-- 切换空间入口在下拉「当前空间」区块 hover；此处仅为分隔线与菜单项。 -->
         <div class="menu-divider"></div>
-        <div class="menu-item" :title="$t('common.githubStarTip')" @click="openGithub">
+       <div class="menu-item" style="display:none" :title="$t('common.githubStarTip')" @click="openGithub">
           <t-icon name="logo-github" class="menu-icon" />
           <span class="menu-text-with-icon">
             <span>{{ $t('common.github') }}</span>

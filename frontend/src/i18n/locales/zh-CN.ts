@@ -52,7 +52,6 @@ export default {
     reopen: "新手引导",
     steps: {
       welcome: {
-        title: "欢迎使用 WeKnora",
         desc: "只需几步，带你快速了解知识库、对话与智能体的核心用法。点击「下一步」开始。",
       },
       knowledge: {
@@ -1100,7 +1099,6 @@ export default {
       title: "权限不足",
       desc: "你当前的角色无权访问此设置项。请联系本空间的管理员获取所需角色。",
     },    weknoraCloud: {
-      title: "WeKnora Cloud",
       description: "配置 WeKnora Cloud 的 APPID 和 APPSECRET 凭证。凭证用于模型服务和文档解析引擎。",
       viewDocs: "查看文档",
       unconfigured: "尚未配置凭证，请填写 APPID 和 APPSECRET",
@@ -3521,7 +3519,7 @@ export default {
     },
   },
   createChat: {
-    title: "Hi，我是 WeKnora，让你的知识触手可及",
+     title: "Hi，我是 AI 政务助手，让政务知识触手可及",
     newSessionTitle: "新会话",
     messages: {
       selectKnowledgeBase: "请先选择知识库",
@@ -6505,7 +6503,6 @@ export default {
       storeMeta: "Chrome 应用商店 · v1.0.0",
     },
     claw: {
-      title: "WeKnora Skill",
       subtitle:
         "通过 WeKnora REST API 导入文档并执行混合检索（向量 + 关键词）。适用于上传文件/URL/Markdown 到知识库、跨库检索与浏览知识内容。",
       capabilitiesTitle: "Skill 能力",

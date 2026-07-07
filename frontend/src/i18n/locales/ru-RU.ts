@@ -52,7 +52,6 @@ export default {
     reopen: 'Обучение',
     steps: {
       welcome: {
-        title: 'Добро пожаловать в WeKnora',
         desc: 'Несколько простых шагов познакомят вас с базами знаний, чатом и агентами. Нажмите «Далее», чтобы начать.',
       },
       knowledge: {
@@ -1147,7 +1146,6 @@ export default {
       desc: 'Ваша роль не позволяет открыть этот раздел настроек. Обратитесь к администратору пространства, чтобы запросить нужную роль.',
     },
     weknoraCloud: {
-      title: 'WeKnora Cloud',
       description: 'Настройте учётные данные APPID и APPSECRET для WeKnora Cloud. Данные используются для модельных сервисов и движка парсинга документов.',
       viewDocs: 'Документация',
       unconfigured: 'Учётные данные не настроены. Заполните APPID и APPSECRET.',
@@ -2983,7 +2981,7 @@ export default {
     builtinTag: 'Built-in'
   },
   createChat: {
-    title: 'Привет, я WeKnora — ваши знания всегда под рукой',
+     title: 'Привет, я AI 政务助手 — ваши знания всегда под рукой',
     newSessionTitle: 'Новая сессия',
     messages: {
       selectKnowledgeBase: 'Сначала выберите базу знаний',
@@ -6305,7 +6303,6 @@ export default {
       storeMeta: 'Chrome Web Store · v1.0.0',
     },
     claw: {
-      title: 'WeKnora Skill',
       subtitle:
         'Импорт документов и гибридный поиск (вектор + ключевые слова) через REST API WeKnora — загрузки, URL, Markdown и поиск.',
       capabilitiesTitle: 'Возможности Skill',

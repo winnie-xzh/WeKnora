@@ -23,6 +23,7 @@
 import Menu from '@/components/menu.vue'
 import { ref, onMounted, onUnmounted, nextTick, provide, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router'
+import { useUIStore } from '@/stores/ui'
 import useKnowledgeBase from '@/hooks/useKnowledgeBase'
 import UploadMask from '@/components/upload-mask.vue'
 import Settings from '@/views/settings/Settings.vue'
@@ -38,6 +39,7 @@ import { useI18n } from 'vue-i18n'
 let { requestMethod } = useKnowledgeBase()
 const route = useRoute();
 const router = useRouter();
+const uiStore = useUIStore()
 const commandPaletteStore = useCommandPaletteStore();
 let ismask = ref(false)
 let uploadInput = ref();
@@ -65,6 +67,15 @@ const handleGlobalKeyDown = (e: KeyboardEvent) => {
         e.preventDefault()
         reloadApp()
     }
+}
+
+// 移动端匹配媒体查询：宽度 ≤ 768px 时自动折叠侧栏
+const MOBILE_MEDIA_QUERY = '(max-width: 768px)'
+let mobileMediaQuery: MediaQueryList | null = null
+const handleMobileMediaChange = (e: MediaQueryListEvent | MediaQueryList) => {
+  if (e.matches) {
+    uiStore.collapseSidebar()
+  }
 }
 
 // 用于跟踪拖拽进入/离开的计数器，解决子元素触发 dragleave 的问题
@@ -203,6 +214,11 @@ const handleGlobalDrop = async (event: DragEvent) => {
 
 // 组件挂载时添加全局事件监听器
 onMounted(() => {
+    // 移动端侧栏折叠
+    mobileMediaQuery = window.matchMedia(MOBILE_MEDIA_QUERY)
+    handleMobileMediaChange(mobileMediaQuery)
+    mobileMediaQuery.addEventListener('change', handleMobileMediaChange)
+
     document.addEventListener('dragenter', handleGlobalDragEnter, true);
     document.addEventListener('dragover', handleGlobalDragOver, true);
     document.addEventListener('dragleave', handleGlobalDragLeave, true);
@@ -238,6 +254,10 @@ function maybeOpenCmdkFromRoute() {
 
 // 组件卸载时移除全局事件监听器
 onUnmounted(() => {
+    if (mobileMediaQuery) {
+      mobileMediaQuery.removeEventListener('change', handleMobileMediaChange)
+      mobileMediaQuery = null
+    }
     document.removeEventListener('dragenter', handleGlobalDragEnter, true);
     document.removeEventListener('dragover', handleGlobalDragOver, true);
     document.removeEventListener('dragleave', handleGlobalDragLeave, true);
@@ -259,7 +279,8 @@ onUnmounted(() => {
     align-items: stretch;
     width: 100%;
     height: 100%;
-    min-width: 600px;
+   min-width: 600px;
+    min-width: 320px;
     min-height: 0;
     /* 统一整页背景，让左侧菜单与右侧内容区视觉连贯 */
     background: var(--td-bg-color-container);

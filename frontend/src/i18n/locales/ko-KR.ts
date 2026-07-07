@@ -52,7 +52,6 @@ export default {
     reopen: "사용 가이드",
     steps: {
       welcome: {
-        title: "WeKnora에 오신 것을 환영합니다",
         desc: "몇 단계만으로 지식 베이스, 대화, 에이전트의 핵심 사용법을 안내합니다. '다음'을 눌러 시작하세요.",
       },
       knowledge: {
@@ -1093,7 +1092,6 @@ export default {
       desc: "현재 역할로는 이 설정 페이지에 접근할 수 없습니다. 이 워크스페이스의 관리자에게 필요한 역할을 요청하세요.",
     },
     weknoraCloud: {
-      title: 'WeKnora Cloud',
       description: 'WeKnora Cloud APPID 및 APPSECRET 자격 증명을 설정합니다. 자격 증명은 모델 서비스와 문서 파싱 엔진에 사용됩니다.',
       viewDocs: '문서 보기',
       unconfigured: '자격 증명이 설정되지 않았습니다. APPID와 APPSECRET을 입력하세요.',
@@ -3497,7 +3495,7 @@ export default {
     },
   },
   createChat: {
-    title: "안녕하세요, WeKnora입니다 — 당신의 지식을 손끝에",
+     title: "안녕하세요, AI 政务助手입니다 — 당신의 지식을 손끝에",
     newSessionTitle: "새 세션",
     messages: {
       selectKnowledgeBase: "먼저 지식베이스를 선택해주세요",
@@ -6484,7 +6482,6 @@ export default {
       storeMeta: "Chrome 웹 스토어 · v1.0.0",
     },
     claw: {
-      title: "WeKnora Skill",
       subtitle:
         "WeKnora REST API로 문서를 가져오고 하이브리드 검색(벡터+키워드)을 수행합니다. 파일/URL/Markdown 업로드 및 검색에 사용.",
       capabilitiesTitle: "Skill 기능",

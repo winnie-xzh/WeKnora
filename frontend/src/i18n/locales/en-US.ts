@@ -52,7 +52,6 @@ export default {
     reopen: 'Product tour',
     steps: {
       welcome: {
-        title: 'Welcome to WeKnora',
         desc: 'A few quick steps to get you familiar with knowledge bases, chat and agents. Click "Next" to begin.',
       },
       knowledge: {
@@ -1234,7 +1233,6 @@ export default {
       desc: "Your role can't access this settings page. Ask an admin of this workspace to grant the required role.",
     },
     weknoraCloud: {
-      title: 'WeKnora Cloud',
       description: 'Configure WeKnora Cloud APPID and APPSECRET credentials. Credentials are used for model services and document parsing engine.',
       viewDocs: 'View Docs',
       unconfigured: 'Credentials not configured. Please fill in APPID and APPSECRET.',
@@ -2288,7 +2286,7 @@ export default {
     goToAgentSettings: 'Go to agent settings'
   },
   createChat: {
-    title: 'Hi, I am WeKnora — your knowledge, within reach',
+     title: 'Hi, I am AI 政务助手 — your government knowledge, within reach',
     newSessionTitle: 'New Session',
     messages: {
       selectKnowledgeBase: 'Please select a knowledge base first',
@@ -6480,7 +6478,6 @@ export default {
       storeMeta: 'Chrome Web Store · v1.0.0',
     },
     claw: {
-      title: 'WeKnora Skill',
       subtitle:
         'Import documents and run hybrid retrieval (vector + keyword) via the WeKnora REST API—for uploads, URL imports, Markdown entries, and cross-KB search.',
       capabilitiesTitle: 'Skill capabilities',
