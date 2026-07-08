@@ -1245,6 +1245,7 @@ onBeforeRouteUpdate((to, from, next) => {
     .input-container {
         max-width: 100%;
         padding: 0 0 env(safe-area-inset-bottom, 16px);
+        margin-bottom: 16px;
         min-height: auto;
     }
 }
