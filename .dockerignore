@@ -29,6 +29,48 @@
 frontend/
 WeKnora-Chrome-Extension/
 
+# 构建和部署时不需要的大目录
+docreader/.venv/
+docreader/__pycache__/
+docreader/.pylintrc
+docreader/uv.lock
+
+# 运行时不需要的测试/文档/示例
+testdata/
+docs/
+examples/
+deploy/
+misc/
+helm/
+miniprogram/
+
+# macOS 隐藏文件
+._*
+
+# 构建和部署时不需要的大目录
+docreader/.venv/
+docreader/node_modules/
+docreader/__pycache__/
+docreader/.pylintrc
+docreader/uv.lock
+
+# 运行时不需要的测试/文档/示例
+testdata/
+docs/
+examples/
+deploy/
+misc/
+helm/
+miniprogram/
+
+# macOS 隐藏文件
+.**.DS_Store
+._*
+
+# Codex 工作区文件
+.codex-map-overview.md
+.codex-tasks.md
+
 # 日志 / 临时文件
 logs/
 tmp/
