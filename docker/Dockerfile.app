@@ -65,9 +65,10 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 RUN --mount=type=cache,target=/go/pkg/mod cp -r /go/pkg/mod/github.com/yanyiwu/ /app/yanyiwu/
 
 # Compress the Go binary with UPX (save ~150MB)
-RUN curl -sL "https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-arm64_linux.tar.xz" -o /tmp/upx.tar.xz && \
+RUN curl -sL "https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-amd64_linux.tar.xz" -o /tmp/upx.tar.xz && \
     tar -xJf /tmp/upx.tar.xz -C /tmp && \
-    /tmp/upx-4.2.4-arm64_linux/upx --best /app/WeKnora && \
+    /tmp/upx-4.2.4-amd64_linux/upx --best /app/WeKnora || \
+    echo "UPX compression skipped (arch mismatch or download failed)" && \
     rm -rf /tmp/upx*
 
 # Final stage
