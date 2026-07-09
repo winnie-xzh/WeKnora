@@ -81,7 +81,7 @@ Page({
 
     try {
       var sessionId = await this.ensureSession();
-      var assistantMsg = { role: "assistant", content: "", html: "", thinking: "" };
+      var assistantMsg = { role: "assistant", content: "", html: "", thinking: "", thinkingDone: false };
       messages = messages.concat([assistantMsg]);
       self.setData({ messages: messages });
 
@@ -91,42 +91,24 @@ Page({
           onChunk: function(content) {
             var msgs = self.data.messages;
             var last = msgs[msgs.length - 1];
-            last.content += content;
-            // Parse <think> tags from accumulated content
-            var full = last.content;
-            var thinkClose = "</think>";
-            if (full.indexOf(thinkClose) !== -1) {
-              var idx = full.lastIndexOf(thinkClose);
-              last.thinking = full.substring(0, idx).replace("<think>", "").trim();
-              last.content = full.substring(idx + thinkClose.length).trim();
-              last.showThink = true;
-            } else if (full.indexOf("<think>") !== -1) {
-              last.thinking = full.replace("<think>", "").trim();
-              last.content = "";
-              last.showThink = true;
+            if (last.thinking && !last.thinkingDone) {
+              last.thinkingDone = true;
             }
-            last.html = markdownToHtml(last.content || last.thinking);
+            last.content += content;
+            last.html = markdownToHtml(last.content);
             self.setData({ messages: msgs });
           },
           onThinking: function(content) {
             var msgs = self.data.messages;
             var last = msgs[msgs.length - 1];
             last.thinking += content;
+            last.thinkingDone = false;
             self.setData({ messages: msgs });
           },
           onComplete: function() {
             var msgs = self.data.messages;
             var last = msgs[msgs.length - 1];
-            // Final <think> parsing
-            var full = last.content;
-            var thinkClose = "</think>";
-            if (full.indexOf(thinkClose) !== -1) {
-              var idx = full.lastIndexOf(thinkClose);
-              last.thinking = full.substring(0, idx).replace("<think>", "").trim();
-              last.content = full.substring(idx + thinkClose.length).trim();
-              last.showThink = true;
-            }
-            last.html = markdownToHtml(last.content || last.thinking);
+            last.html = markdownToHtml(last.content);
             self.setData({ messages: msgs, loading: false });
             self.streamController = null;
           },

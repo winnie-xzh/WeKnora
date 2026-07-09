@@ -76,23 +76,27 @@
 .typing { opacity: 0.6; font-size: 26rpx; }
 
 .thinking-box {
-  background: #f0f4f8;
-  border-left: 6rpx solid #07c05f;
-  border-radius: 10rpx;
-  padding: 16rpx;
+  background: #f0f2f5;
+  border-radius: 12rpx;
+  padding: 14rpx 16rpx;
   margin-bottom: 12rpx;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4rpx); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .thinking-header {
-  font-size: 24rpx;
-  font-weight: 600;
-  color: #07c05f;
-  margin-bottom: 8rpx;
+  font-size: 22rpx;
+  color: #8e8e93;
+  margin-bottom: 6rpx;
 }
 
 .thinking-text {
   font-size: 24rpx;
-  color: rgba(0, 0, 0, 0.6);
+  color: rgba(0, 0, 0, 0.5);
   line-height: 1.6;
   white-space: pre-wrap;
 }

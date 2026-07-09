@@ -23,8 +23,8 @@
   <view wx:for="{{messages}}" wx:key="index" id="msg-{{index}}" class="msg-row {{item.role}}">
     <view class="avatar {{item.role}}">{{item.role === 'user' ? '🙂' : '🤖'}}</view>
     <view class="bubble {{item.role}}">
-      <view wx:if="{{item.showThink}}" class="thinking-box">
-        <view class="thinking-header">🤔 思考过程</view>
+      <view wx:if="{{item.thinking && !item.thinkingDone}}" class="thinking-box">
+        <view class="thinking-header">🤔 思考中...</view>
         <text class="thinking-text">{{item.thinking}}</text>
       </view>
       <rich-text wx:if="{{item.html}}" nodes="{{item.html}}"></rich-text>

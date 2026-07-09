@@ -57,7 +57,7 @@ function knowledgeChat(sessionId, query, knowledgeBaseId) {
   return request(`/api/v1/knowledge-chat/${sessionId}`, { method: "POST", data });
 }
 
-function knowledgeChatStream(sessionId, query, knowledgeBaseId, { onChunk, onComplete, onError }, opts) {
+function knowledgeChatStream(sessionId, query, knowledgeBaseId, { onChunk, onComplete, onError, onThinking }, opts) {
   var opts = opts || {};
   const settings = getSettings();
   if (!settings.baseUrl) { onError(new Error("Please configure the AI 政务助手 API base URL first.")); return null; }
@@ -65,6 +65,7 @@ function knowledgeChatStream(sessionId, query, knowledgeBaseId, { onChunk, onCom
 
   const data = { query: query };
   if (knowledgeBaseId) data.knowledge_base_ids = [knowledgeBaseId];
+  data.channel = "web";
   if (opts.agentEnabled && opts.agentId) {
     data.agent_enabled = true;
     data.agent_id = opts.agentId;
@@ -108,8 +109,9 @@ function knowledgeChatStream(sessionId, query, knowledgeBaseId, { onChunk, onCom
     }
   };
 
+  var chatPath = (opts.agentEnabled && opts.agentId) ? "/api/v1/agent-chat/" : "/api/v1/knowledge-chat/";
   requestTask = wx.request({
-    url: `${settings.baseUrl}/api/v1/knowledge-chat/${sessionId}`,
+    url: `${settings.baseUrl}${chatPath}${sessionId}`,
     method: "POST", data, enableChunked: true, timeout: 300000,
     header: {
       "Content-Type": "application/json",
