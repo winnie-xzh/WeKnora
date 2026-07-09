@@ -1,18 +1,57 @@
-<view class="page">
-  <view class="card">
-    <view class="title">Knowledge Chat</view>
-    <view class="muted">Ask the selected WeKnora knowledge base.</view>
-
-    <view class="field">
-      <text class="label">Question</text>
-      <textarea value="{{query}}" placeholder="Ask something..." bindinput="onQueryInput" />
+<scroll-view class="chat-scroll" style="padding-top: {{navbarHeight}}px;" scroll-y scroll-into-view="msg-{{messages.length - 1}}">
+  <view class="welcome-area" wx:if="{{messages.length === 0}}">
+    <view class="greeting-card">
+      <text class="greeting-title">Hi, AI 政务助手</text>
+      <text class="greeting-desc">我是您的智能知识助手，可以帮您解答各种问题</text>
     </view>
 
-    <button bindtap="ask" loading="{{loading}}" disabled="{{!query}}">Ask WeKnora</button>
+    <view class="suggestions-card" wx:if="{{suggestions.length > 0}}">
+      <view class="suggestions-list">
+        <view
+          wx:for="{{suggestions}}"
+          wx:key="*this"
+          class="suggestion-chip"
+          data-text="{{item}}"
+          bindtap="onSuggestionTap"
+        >
+          <text>{{item}}</text>
+        </view>
+      </view>
+    </view>
   </view>
 
-  <view class="card answer-card" wx:if="{{answer || rawResponse}}">
-    <view class="label">Answer</view>
-    <view class="answer">{{answer || rawResponse}}</view>
+  <view wx:for="{{messages}}" wx:key="index" id="msg-{{index}}" class="msg-row {{item.role}}">
+    <view class="avatar {{item.role}}">{{item.role === 'user' ? '🙂' : '🤖'}}</view>
+    <view class="bubble {{item.role}}">
+      <view wx:if="{{item.showThink}}" class="thinking-box">
+        <view class="thinking-header">🤔 思考过程</view>
+        <text class="thinking-text">{{item.thinking}}</text>
+      </view>
+      <rich-text wx:if="{{item.html}}" nodes="{{item.html}}"></rich-text>
+      <text wx:else class="bubble-text">{{item.content}}</text>
+    </view>
+  </view>
+  <view wx:if="{{loading}}" class="msg-row assistant">
+    <view class="avatar assistant">🤖</view>
+    <view class="bubble assistant typing"><text>💬 ...</text></view>
+  </view>
+  <view style="height: 20rpx;"></view>
+</scroll-view>
+
+<view class="input-fixed">
+  <view class="input-row">
+    <textarea class="input-box" value="{{query}}" placeholder="💬 输入你的问题..." bindinput="onQueryInput" auto-height maxlength="-1" />
+    <button class="send" bindtap="ask" loading="{{loading}}" disabled="{{!query}}">
+      <text wx:if="{{!loading}}">➤</text>
+    </button>
   </view>
 </view>
+
+<nav-bar title="💬 Chat" bind:menutap="onMenuTap"></nav-bar>
+<sidebar
+  show="{{sidebarOpen}}"
+  activeKey="{{activeKey}}"
+  profileName="AI 政务助手"
+  bind:close="onSidebarClose"
+  bind:itemtap="onSidebarItemTap"
+></sidebar>

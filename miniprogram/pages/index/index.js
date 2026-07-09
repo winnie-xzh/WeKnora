@@ -25,7 +25,16 @@ Page({
     selectedKnowledgeBaseId: "",
     selectedKnowledgeBaseName: "",
     statusMessage: "",
-    url: ""
+    url: "",
+    // sidebar
+    sidebarOpen: false,
+    activeKey: "knowledge",
+    navbarHeight: 0
+  },
+
+  onLoad() {
+    const sysInfo = wx.getSystemInfoSync();
+    this.setData({ navbarHeight: sysInfo.statusBarHeight + 44 });
   },
 
   onShow() {
@@ -39,6 +48,21 @@ Page({
       return;
     }
     this.loadKnowledgeBases();
+  },
+
+  onMenuTap() {
+    this.setData({ sidebarOpen: true });
+  },
+
+  onSidebarClose() {
+    this.setData({ sidebarOpen: false });
+  },
+
+  onSidebarItemTap(e) {
+    const pageMap = { knowledge: "index", chat: "chat", settings: "settings" };
+    const { key } = e.detail;
+    this.setData({ sidebarOpen: false });
+    wx.redirectTo({ url: "/pages/" + pageMap[key] + "/" + pageMap[key] });
   },
 
   onUrlInput(event) {
@@ -67,7 +91,7 @@ Page({
   },
 
   openSettings() {
-    wx.switchTab({ url: "/pages/settings/settings" });
+    wx.redirectTo({ url: "/pages/settings/settings" });
   },
 
   async loadKnowledgeBases() {
@@ -95,7 +119,7 @@ Page({
         selectedKnowledgeBaseId: selected?.id || "",
         selectedKnowledgeBaseName: selected?.name || "",
         statusMessage: knowledgeBases.length
-          ? `Loaded ${knowledgeBases.length} knowledge bases.`
+          ? "Loaded " + knowledgeBases.length + " knowledge bases."
           : "No knowledge bases found."
       });
       if (selected?.id) {

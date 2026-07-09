@@ -1,0 +1,152 @@
+.sidebar-root {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.55);
+  transition: opacity 0.3s ease;
+  pointer-events: auto;
+}
+
+.overlay-off { opacity: 0; }
+.overlay-on { opacity: 1; }
+
+.drawer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 620rpx;
+  background: #f7f8fa;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  pointer-events: auto;
+}
+
+.drawer-off { transform: translateX(-100%); }
+.drawer-on { transform: translateX(0); }
+
+/* Header with avatar */
+.drawer-header {
+  padding: 60rpx 32rpx 32rpx;
+  background: linear-gradient(160deg, #0d3b2a 0%, #05a04f 55%, #07c05f 100%);
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.avatar-circle {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.avatar-text {
+  color: #ffffff;
+  font-size: 36rpx;
+  font-weight: 700;
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.profile-name {
+  color: #ffffff;
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.profile-badge {
+  color: #ffffff;
+  font-size: 22rpx;
+  padding: 4rpx 18rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 20rpx;
+  align-self: flex-start;
+}
+
+/* Menu body */
+.drawer-body {
+  flex: 1;
+  padding: 20rpx 16rpx;
+  overflow-y: auto;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 24rpx;
+  margin-bottom: 6rpx;
+  border-radius: 16rpx;
+  font-size: 30rpx;
+  color: #1a1a1a;
+  transition: background 0.15s;
+  background: transparent;
+}
+
+.menu-item:active { background: #e8e8ed; }
+
+.menu-item-active {
+  background: #e9f8ec !important;
+}
+
+.menu-icon-wrap {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 14rpx;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+}
+
+.menu-icon {
+  font-size: 32rpx;
+  line-height: 1;
+}
+
+.menu-label {
+  font-weight: 500;
+  flex: 1;
+  font-size: 28rpx;
+}
+
+.menu-arrow {
+  color: #07c05f;
+  font-size: 36rpx;
+  font-weight: 300;
+}
+
+/* Footer */
+.drawer-footer {
+  padding: 24rpx 32rpx 40rpx;
+  border-top: 1rpx solid #e8e8ed;
+}
+
+.version {
+  color: #b0b0b0;
+  font-size: 22rpx;
+}

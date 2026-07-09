@@ -1,33 +1,18 @@
 {
   "pages": [
-    "pages/index/index",
     "pages/chat/chat",
+    "pages/index/index",
     "pages/settings/settings"
   ],
   "window": {
-    "navigationBarTitleText": "WeKnora",
+    "navigationBarTitleText": "AI 政务助手",
     "navigationBarBackgroundColor": "#0d3b2a",
     "navigationBarTextStyle": "white",
-    "backgroundColor": "#f3f3f3"
+    "backgroundColor": "#f3f3f3",
+    "navigationStyle": "custom"
   },
-  "tabBar": {
-    "color": "#8b8b8b",
-    "selectedColor": "#07c05f",
-    "backgroundColor": "#ffffff",
-    "borderStyle": "white",
-    "list": [
-      {
-        "pagePath": "pages/index/index",
-        "text": "Knowledge"
-      },
-      {
-        "pagePath": "pages/chat/chat",
-        "text": "Chat"
-      },
-      {
-        "pagePath": "pages/settings/settings",
-        "text": "Settings"
-      }
-    ]
+  "usingComponents": {
+    "nav-bar": "/components/nav-bar/nav-bar",
+    "sidebar": "/components/sidebar/sidebar"
   }
 }

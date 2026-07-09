@@ -1,0 +1,15 @@
+<view class="nav-bar-wrap" style="padding-top: {{statusBarHeight}}px;">
+  <view class="nav-bar" style="height: {{navBarHeight}}px;">
+    <view class="nav-left" bindtap="onMenuTap">
+      <view class="hamburger">
+        <view class="line"></view>
+        <view class="line"></view>
+        <view class="line"></view>
+      </view>
+    </view>
+    <view class="nav-center">
+      <text class="nav-title">{{title}}</text>
+    </view>
+    <view class="nav-right"></view>
+  </view>
+</view>

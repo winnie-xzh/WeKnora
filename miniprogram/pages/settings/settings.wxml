@@ -1,7 +1,7 @@
-<view class="page">
+<view class="page" style="padding-top: {{navbarHeight}}px;">
   <view class="card">
-    <view class="title">Connect WeKnora</view>
-    <view class="muted">Use your WeKnora API endpoint and tenant API key.</view>
+    <view class="title">Connect AI 政务助手</view>
+    <view class="muted">Use your AI 政务助手 API endpoint and tenant API key.</view>
 
     <view class="field">
       <text class="label">API Base URL</text>
@@ -15,4 +15,43 @@
 
     <button bindtap="save">Save settings</button>
   </view>
+
+  <view class="card">
+    <view class="title">Agent & Search</view>
+    <view class="muted">Configure agent mode and web search defaults.</view>
+
+    <view class="field">
+      <text class="label">Default Agent</text>
+      <picker range="{{agentNames}}" value="{{agentIndex}}" bindchange="onAgentChange">
+        <view class="picker-value">{{agentNames[agentIndex] || "None (knowledge only)"}}</view>
+      </picker>
+    </view>
+
+    <view class="toggle-row" bindtap="onAgentToggle">
+      <view class="toggle-info">
+        <text class="toggle-label">Enable Agent Mode</text>
+        <text class="toggle-desc">Use ReAct agent for complex tasks</text>
+      </view>
+      <switch checked="{{agentEnabled}}" color="#07c05f" />
+    </view>
+
+    <view class="toggle-row" bindtap="onWebSearchToggle">
+      <view class="toggle-info">
+        <text class="toggle-label">Web Search</text>
+        <text class="toggle-desc">Search the internet for answers</text>
+      </view>
+      <switch checked="{{webSearchEnabled}}" color="#07c05f" />
+    </view>
+
+    <button bindtap="save">Save settings</button>
+  </view>
 </view>
+
+<nav-bar title="Settings" bind:menutap="onMenuTap"></nav-bar>
+<sidebar
+  show="{{sidebarOpen}}"
+  profileName="AI 政务助手"
+  activeKey="{{activeKey}}"
+  bind:close="onSidebarClose"
+  bind:itemtap="onSidebarItemTap"
+></sidebar>

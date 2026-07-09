@@ -1,14 +1,44 @@
 {
-  "description": "WeKnora Mini Program plugin",
+  "description": "AI 政务助手 Mini Program plugin",
   "setting": {
     "urlCheck": true,
     "es6": true,
     "enhance": true,
     "postcss": true,
-    "minified": true
+    "minified": true,
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "packNpmManually": true,
+    "packNpmRelationList": [
+      {
+        "packageJsonPath": "./package.json",
+        "miniprogramNpmDistDir": "./"
+      }
+    ],
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
   },
   "compileType": "miniprogram",
   "libVersion": "latest",
-  "projectname": "WeKnora Mini Program",
-  "condition": {}
+  "projectname": "AI 政务助手 Mini Program",
+  "condition": {},
+  "appid": "wx3ab8788aea457d10",
+  "simulatorPluginLibVersion": {},
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "editorSetting": {}
 }

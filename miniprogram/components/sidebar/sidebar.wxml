@@ -1,0 +1,37 @@
+<view class="sidebar-root" wx:if="{{visible}}">
+  <view class="overlay {{animating ? 'overlay-on' : 'overlay-off'}}" bindtap="onOverlayTap"></view>
+  <view
+    class="drawer {{animating ? 'drawer-on' : 'drawer-off'}}"
+    bindtransitionend="onTransitionEnd"
+  >
+    <view class="drawer-header">
+      <view class="avatar-circle">
+        <text class="avatar-text">W</text>
+      </view>
+      <view class="profile-info">
+        <text class="profile-name">{{profileName || "AI 政务助手"}}</text>
+        <text class="profile-badge">管理空间</text>
+      </view>
+    </view>
+
+    <view class="drawer-body">
+      <view
+        wx:for="{{menus}}"
+        wx:key="key"
+        class="menu-item {{item.key === activeKey ? 'menu-item-active' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="onItemTap"
+      >
+        <view class="menu-icon-wrap">
+          <text class="menu-icon">{{item.icon}}</text>
+        </view>
+        <text class="menu-label">{{item.label}}</text>
+        <text wx:if="{{item.key === activeKey}}" class="menu-arrow">›</text>
+      </view>
+    </view>
+
+    <view class="drawer-footer">
+      <text class="version">AI 政务助手 v0.6.3</text>
+    </view>
+  </view>
+</view>

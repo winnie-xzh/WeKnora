@@ -1,0 +1,54 @@
+.nav-bar-wrap {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: #ffffff;
+}
+
+.nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24rpx;
+  box-sizing: border-box;
+}
+
+.nav-left,
+.nav-right {
+  width: 80rpx;
+  display: flex;
+  align-items: center;
+}
+
+.nav-left {
+  justify-content: flex-start;
+}
+
+.nav-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.nav-title {
+  color: #1a1a1a;
+  font-size: 34rpx;
+  font-weight: 600;
+}
+
+.hamburger {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  padding: 8rpx;
+}
+
+.hamburger .line {
+  width: 36rpx;
+  height: 3rpx;
+  border-radius: 2rpx;
+  background: #1a1a1a;
+}

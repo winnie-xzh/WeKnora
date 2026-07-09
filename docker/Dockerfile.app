@@ -22,7 +22,7 @@ RUN if [ -n "$APK_MIRROR_ARG" ]; then \
     apt-get install -y --no-install-recommends git build-essential libsqlite3-dev curl xz-utils
 
 # Install migrate tool
-RUN go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+RUN --mount=type=cache,target=/go \n    go install -tags "postgres" github.com/golang-migrate/migrate/v4/cmd/migrate@latest 2>/dev/null || echo "migrate install skipped (cached from previous build or GitHub unreachable)"
 
 # Copy go mod and sum files
 COPY go.mod go.sum ./

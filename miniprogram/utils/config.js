@@ -1,36 +1,37 @@
-const STORAGE_KEY = "weknora_settings";
+var STORAGE_KEY = "weknora_settings";
+
+var DEFAULTS = {
+  baseUrl: "https://ai.gxlyykt.cn",
+  apiKey: "sk-vXIB3UGO5kUbDSqQMyZJTN07_PBTVMx0J4m7uuc3LRksOSEW",
+  selectedKnowledgeBaseId: "",
+  agentId: "builtin-quick-answer",
+  agentEnabled: true,
+  webSearchEnabled: true
+};
 
 function normalizeBaseUrl(baseUrl) {
-  if (!baseUrl || typeof baseUrl !== "string") {
-    return "";
-  }
-
+  if (!baseUrl || typeof baseUrl !== "string") return "";
   return baseUrl.trim().replace(/\/+$/, "");
 }
 
 function getSettings() {
-  const stored = wx.getStorageSync(STORAGE_KEY) || {};
   return {
-    baseUrl: normalizeBaseUrl(stored.baseUrl || ""),
-    apiKey: stored.apiKey || "",
-    selectedKnowledgeBaseId: stored.selectedKnowledgeBaseId || ""
+    baseUrl: normalizeBaseUrl(DEFAULTS.baseUrl),
+    apiKey: DEFAULTS.apiKey,
+    selectedKnowledgeBaseId: DEFAULTS.selectedKnowledgeBaseId || "",
+    agentId: DEFAULTS.agentId || "",
+    agentEnabled: true,
+    webSearchEnabled: true
   };
 }
 
 function saveSettings(settings) {
-  const current = getSettings();
-  const next = {
-    ...current,
-    ...settings,
-    baseUrl: normalizeBaseUrl(settings.baseUrl ?? current.baseUrl)
-  };
-  wx.setStorageSync(STORAGE_KEY, next);
-  return next;
+  return getSettings();
 }
 
 module.exports = {
-  STORAGE_KEY,
-  getSettings,
-  normalizeBaseUrl,
-  saveSettings
+  STORAGE_KEY: STORAGE_KEY,
+  getSettings: getSettings,
+  normalizeBaseUrl: normalizeBaseUrl,
+  saveSettings: saveSettings
 };
