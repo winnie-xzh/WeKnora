@@ -300,7 +300,7 @@ export default {
   listSpaceSidebar: {
     title: "筛选",
     all: "全部",
-    workspace: "本空间",
+    workspace: "空间",
     mine: "我的",
     spaces: "共享给我",
     favorites: "收藏",
