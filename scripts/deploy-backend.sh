@@ -13,6 +13,8 @@ unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY
 #
 set -euo pipefail
 
+START_TIME=$(date +%s)
+
 SSH_KEY="/Users/winnie/Documents/惠民卡资料/gxlyykt.pem"
 HOST="root@8.134.215.118"
 SSH_OPTS="-o ServerAliveInterval=30 -o ServerAliveCountMax=3"
@@ -80,4 +82,5 @@ curl -s http://localhost:8080/health
 echo ""
 echo "=== 全部完成 ==="
 echo ""
-echo "后端已部署到服务器（在服务器上原生编译）"
+ELAPSED=$(( $(date +%s) - START_TIME ))
+printf "⏱ 总耗时: %dm%02ds\n" $((ELAPSED/60)) $((ELAPSED%60))
