@@ -6,16 +6,15 @@ unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY
 #
 # 思路：
 #   - 前端（nginx + 静态文件）→ Mac 本地构建，推 ACR
-#   - 后端（Go 编译）→ 服务器原生构建，推 ACR
-#   避免 Mac arm64 → 服务器 x86_64 架构问题。
+#   - 后端（Go 编译）→ 用 deploy-backend.sh 在服务器上构建，已推 ACR
+#   这里只做部署：拉取最新镜像，重启服务
 #
 # 用法
-#   ./scripts/deploy-aliyun.sh               # 默认（app + frontend）
-#   ./scripts/deploy-aliyun.sh --no-cache     # 强制重构建
+#   ./scripts/deploy-aliyun.sh               # 默认
 #   ./scripts/deploy-aliyun.sh --full         # 全量（含 docreader）
 #
 # 前置条件：
-#   1. git 已推送到 fork（winnie-xzh/WeKnora）
+#   1. 最新镜像已在 ACR（用 deploy-backend.sh 构建）
 #   2. .env 已备份到 /root/.env.weknora.bak
 #   3. SSH 密钥路径正确
 #   4. ACR 已配置（公网端点、命名空间、仓库已创建）
@@ -28,13 +27,11 @@ SSH_OPTS="-o ServerAliveInterval=30 -o ServerAliveCountMax=3"
 ACR_REGISTRY="gz3-registry.cn-guangzhou.cr.aliyuncs.com"
 ACR_NAMESPACE="weknora"
 FULL_DEPLOY=false
-NO_CACHE=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --full) FULL_DEPLOY=true; shift ;;
-    --no-cache) NO_CACHE="--no-cache"; shift ;;
-    *) echo "用法: $0 [--full|--no-cache]"; exit 1 ;;
+    *) echo "用法: $0 [--full]"; exit 1 ;;
   esac
 done
 
@@ -48,7 +45,7 @@ git push fork main
 echo "--- 提交完成 ---"
 
 echo "=== Step 2: 构建并推送前端镜像 ==="
-echo "前端是 nginx + 静态文件，Mac 本地构建即可。"
+echo "前端是 nginx + 静态文件，Mac 本地构建，快。"
 echo ""
 
 # 获取 ACR 临时 Token
@@ -62,16 +59,15 @@ print(d['AuthorizationToken'])
 echo "登录 ACR..."
 echo "$ACR_TOKEN" | docker login --username=cr_temp_user --password-stdin "$ACR_REGISTRY" 2>&1
 
-# 构建前端（不需要 --platform，nginx 多架构自动适配）
+# 构建前端
 VITE_IS_DOCKER=true ./scripts/build_frontend_dist.sh 2>&1 | grep -E 'built in|error'
-docker build $NO_CACHE --platform=linux/amd64 --progress=plain \
-  -t weknora-ui:latest -f frontend/Dockerfile frontend/ 2>&1 | tail -5
+docker build --platform=linux/amd64 -t weknora-ui:latest -f frontend/Dockerfile frontend/ 2>&1 | tail -3
 
 docker tag weknora-ui:latest "$ACR_REGISTRY/$ACR_NAMESPACE/ui:latest"
 docker push "$ACR_REGISTRY/$ACR_NAMESPACE/ui:latest" 2>&1 | tail -3
 echo "--- ui 镜像已推送到 ACR ---"
 
-# docreader 镜像
+# docreader 镜像（非必需时跳过）
 if [ "$FULL_DEPLOY" = true ]; then
   echo "--- 推送 docreader 镜像 ---"
   docker pull wechatopenai/weknora-docreader:latest 2>&1 | tail -1
@@ -80,8 +76,9 @@ if [ "$FULL_DEPLOY" = true ]; then
 fi
 
 echo ""
-echo "=== Step 3: 在服务器上构建 app 镜像并部署 ==="
-echo "服务器是 x86_64，原生编译 Go，比 Mac 上 QEMU 模拟快很多。"
+echo "=== Step 3: 服务器部署 ==="
+echo "后端镜像从 ACR 拉取，不在服务器上编译。"
+echo "如需编译后端，先执行：./scripts/deploy-backend.sh"
 echo ""
 
 # 获取新的临时 Token（旧的可能已过期）
@@ -96,22 +93,11 @@ set -euo pipefail
 
 cd /root/WeKnora-new
 
-echo '--- 拉取最新代码 ---'
-git pull origin main
-echo '最新提交：'
-git log --oneline -1
-
 echo '--- 登录 ACR ---'
 echo '$ACR_TOKEN' | docker login --username=cr_temp_user --password-stdin $ACR_REGISTRY 2>&1
 
-echo '--- 拉取前端镜像 ---'
-docker compose -p weknora pull frontend 2>&1 | tail -3
-
-echo '--- 构建 app 镜像（服务器原生编译，约 3-5 分钟）---'
-docker compose -p weknora build $NO_CACHE --build-arg GOPROXY_ARG=https://goproxy.cn,direct app 2>&1
-
-echo '--- 推送 app 到 ACR ---'
-docker compose -p weknora push app 2>&1 | tail -3
+echo '--- 拉取最新镜像 ---'
+docker compose -p weknora pull app frontend 2>&1 | tail -10
 
 echo '--- 重启服务 ---'
 docker compose -p weknora rm -fs app frontend 2>/dev/null || true
@@ -129,11 +115,11 @@ curl -s http://localhost:8081/ | grep -o '<title>.*</title>'
 echo ""
 echo "=== 全部完成 ==="
 echo ""
-echo "快速部署："
+echo "快速部署（从 ACR 拉镜像，不编译）："
 echo "  ./scripts/deploy-aliyun.sh"
-echo ""
-echo "强制重构建："
-echo "  ./scripts/deploy-aliyun.sh --no-cache"
 echo ""
 echo "全量部署（含 docreader）："
 echo "  ./scripts/deploy-aliyun.sh --full"
+echo ""
+echo "如需编译并推送后端镜像到 ACR："
+echo "  ./scripts/deploy-backend.sh"
