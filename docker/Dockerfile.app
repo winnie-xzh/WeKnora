@@ -1,5 +1,6 @@
+ARG GOLANG_IMAGE=golang:1.26-bookworm
+FROM ${GOLANG_IMAGE} AS builder
 # Build stage
-FROM golang:1.26-bookworm AS builder
 
 WORKDIR /app
 

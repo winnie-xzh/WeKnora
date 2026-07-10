@@ -31,6 +31,7 @@ services:
       dockerfile: docker/Dockerfile.app
       args:
         - APK_MIRROR_ARG=${APK_MIRROR_ARG:-}
+        - GOLANG_IMAGE=gz3-registry.cn-guangzhou.cr.aliyuncs.com/weknora/golang:1.26-bookworm
     container_name: WeKnora-app
     ports:
       - "${APP_PORT:-8080}:8080"
