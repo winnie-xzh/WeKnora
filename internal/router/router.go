@@ -127,7 +127,10 @@ func NewRouter(params RouterParams) *gin.Engine {
 
 	// 健康检查（不需要认证）
 	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "ok"})
+		c.JSON(200, gin.H{
+			"status":  "ok",
+			"version": "0.6.3",
+		})
 	})
 
 	// Swagger API 文档（仅在非生产环境下启用）
