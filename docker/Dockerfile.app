@@ -1,6 +1,5 @@
-ARG GOLANG_IMAGE=golang:1.26-bookworm
-FROM ${GOLANG_IMAGE} AS builder
 # Build stage
+FROM golang:1.26-bookworm AS builder
 
 WORKDIR /app
 
@@ -20,32 +19,17 @@ RUN if [ -n "$APK_MIRROR_ARG" ]; then \
         sed -i "s@deb.debian.org@${APK_MIRROR_ARG}@g" /etc/apt/sources.list.d/debian.sources; \
     fi && \
     apt-get update && \
-    apt-get install -y --no-install-recommends git build-essential libsqlite3-dev curl xz-utils
+    apt-get install -y git build-essential libsqlite3-dev
 
 # Install migrate tool
-RUN --mount=type=cache,target=/go \n    go install -tags "postgres" github.com/golang-migrate/migrate/v4/cmd/migrate@latest 2>/dev/null || echo "migrate install skipped (cached from previous build or GitHub unreachable)"
+RUN go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 
 # Copy go mod and sum files
 COPY go.mod go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod go mod download
 COPY cmd/download cmd/download
 RUN go run cmd/download/duckdb/duckdb.go
-# ── 分层 COPY：按变更频率从低到高排列，最大化缓存命中 ──
-# 1. 几乎不变：配置模板
-COPY config/ ./config/
-
-# 2. 偶尔变：数据 / 迁移 / 脚本
-COPY migrations/ ./migrations/
-COPY scripts/ ./scripts/
-COPY skills/ ./skills/
-COPY dataset/ ./dataset/
-
-# 3. Go 源代码 — 最常变的放最后
-COPY cmd/ ./cmd/
-COPY internal/ ./internal/
-COPY client/ ./client/
-COPY mcp-server/ ./mcp-server/
-COPY cli/ ./cli/
+COPY . .
 
 # Get version and commit info for build injection
 ARG VERSION_ARG
@@ -60,17 +44,8 @@ ENV BUILD_TIME=${BUILD_TIME_ARG}
 ENV GO_VERSION=${GO_VERSION_ARG}
 
 # Build the application with version info
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
-    make build-prod
+RUN --mount=type=cache,target=/go/pkg/mod make build-prod
 RUN --mount=type=cache,target=/go/pkg/mod cp -r /go/pkg/mod/github.com/yanyiwu/ /app/yanyiwu/
-
-# Compress the Go binary with UPX (save ~150MB)
-RUN curl -sL "https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-amd64_linux.tar.xz" -o /tmp/upx.tar.xz && \
-    tar -xJf /tmp/upx.tar.xz -C /tmp && \
-    /tmp/upx-4.2.4-amd64_linux/upx --best /app/WeKnora || \
-    echo "UPX compression skipped (arch mismatch or download failed)" && \
-    rm -rf /tmp/upx*
 
 # Final stage
 FROM debian:12.12-slim
@@ -93,9 +68,10 @@ RUN if [ -n "$APK_MIRROR_ARG" ]; then \
     fi && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-        ca-certificates postgresql-client tzdata sed curl bash wget \
+        build-essential postgresql-client default-mysql-client tzdata sed curl bash vim wget \
         libsqlite3-0 \
-        python3 python3-pip \
+        python3 python3-pip python3-dev libffi-dev libssl-dev \
+        nodejs npm \
         gosu \
         ffmpeg && \
     python3 -m pip install --break-system-packages --upgrade pip setuptools wheel && \
@@ -104,9 +80,8 @@ RUN if [ -n "$APK_MIRROR_ARG" ]; then \
     chown -R appuser:appuser /home/appuser && \
     ln -sf /home/appuser/.local/bin/uvx /usr/local/bin/uvx && \
     chmod +x /usr/local/bin/uvx && \
-    rm -rf /root/.cache/pip /tmp/pip* /home/appuser/.cargo/registry && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man /usr/share/info /var/log/*
+    rm -rf /var/lib/apt/lists/*
 
 # Create data directories and set permissions
 RUN mkdir -p /data/files && \
@@ -131,8 +106,7 @@ COPY --from=builder /app/WeKnora .
 COPY --from=builder /app/scripts/docker-entrypoint.sh ./scripts/docker-entrypoint.sh
 
 # Make scripts executable
-RUN chmod +x ./scripts/*.sh && \
-    rm -f ./scripts/map-query.sh ./scripts/regenerate-map.sh 2>/dev/null; true
+RUN chmod +x ./scripts/*.sh
 
 # Expose ports
 EXPOSE 8080
