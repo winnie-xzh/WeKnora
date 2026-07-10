@@ -2,6 +2,10 @@
 # 清除代理环境变量（Mac 上 Surge/Clash 会干扰 ACR 连接）
 unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY
 #
+# !!! CROSS-PLATFORM BUILD NOTICE !!!
+# Mac（arm64）构建的镜像推送到 x86_64 服务器跑不了 → exec format error。
+# 所以必须加 --platform=linux/amd64 交叉编译。
+#
 # WeKnora 后端一键部署脚本
 #
 # 用法
@@ -22,6 +26,8 @@ HOST="root@8.134.215.118"
 SSH_OPTS="-o ServerAliveInterval=30 -o ServerAliveCountMax=3"
 ACR_REGISTRY="gz3-registry.cn-guangzhou.cr.aliyuncs.com"
 ACR_NAMESPACE="weknora"
+NO_CACHE="${NO_CACHE:-}"
+PLATFORM="linux/amd64"
 
 echo "=== Step 1: 提交代码到 GitHub ==="
 cd "$(dirname "$0")/.."
@@ -47,26 +53,33 @@ echo "$ACR_TOKEN" | docker login --username=cr_temp_user --password-stdin "$ACR_
 
 # 构建后端 app 镜像
 echo "构建 app 镜像（后台，可查看日志: tail -f /tmp/build-app.log）..."
-docker build -t weknora-app:latest \
+docker build $NO_CACHE --platform=$PLATFORM -t weknora-app:latest \
   -f docker/Dockerfile.app \
   --build-arg GOPROXY_ARG=https://goproxy.cn,direct \
   . > /tmp/build-app.log 2>&1 &
 APP_PID=$!
 
-# 等待 app 构建完成
+# 等待 app 构建完成 — 用 PID 判断，不用 docker images
 echo "等待 app 构建..."
+APP_BUILD_OK=false
 for i in $(seq 1 80); do
-  if docker images weknora-app:latest --format '{{.Repository}}' 2>/dev/null | grep -q .; then
-    echo "app 镜像构建完成"
-    break
-  fi
   if ! kill -0 $APP_PID 2>/dev/null; then
-    echo "构建进程已结束，最终日志："
-    tail -5 /tmp/build-app.log
+    if wait $APP_PID 2>/dev/null; then
+      echo "app 镜像构建完成"
+      APP_BUILD_OK=true
+    else
+      echo "app 镜像构建失败！最后 20 行日志："
+      tail -20 /tmp/build-app.log
+    fi
     break
   fi
   sleep 15
 done
+
+if [ "$APP_BUILD_OK" != "true" ]; then
+  echo "app 构建失败，查看日志: tail -f /tmp/build-app.log"
+  exit 1
+fi
 
 # 推送 app 到 ACR
 docker tag weknora-app:latest "$ACR_REGISTRY/$ACR_NAMESPACE/app:latest"
@@ -93,8 +106,7 @@ cd /root/WeKnora-new
 docker compose -p weknora pull app 2>&1 | tail -5
 
 echo '--- 重启 app 服务 ---'
-docker stop WeKnora-app 2>/dev/null || true
-docker rm WeKnora-app 2>/dev/null || true
+docker compose -p weknora rm -fs app 2>/dev/null || true
 docker compose -p weknora up -d app --no-deps
 
 echo '=== 部署完成 ==='
@@ -108,8 +120,6 @@ echo ""
 echo "=== 全部完成 ==="
 echo ""
 echo "后端已部署到服务器"
-echo ""
-echo "验证：运行 curl http://8.134.215.118:8080/health"
 echo ""
 echo "全量部署（含前端）请使用："
 echo "  ./scripts/deploy-aliyun.sh"
