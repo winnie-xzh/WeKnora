@@ -404,7 +404,7 @@ func BuildContainer(container *dig.Container) *dig.Container {
 	// them only after the matching handlers are ready.
 	must(container.Invoke(recoverPendingWikiTasks))
 
-	logger.Infof(ctx, "[Container] Container initialization completed successfully")
+	logger.Infof(ctx, "[Container] Container initialization completed successfully (build-prod)")
 	return container
 }
 

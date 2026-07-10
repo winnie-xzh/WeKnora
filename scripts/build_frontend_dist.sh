@@ -14,5 +14,9 @@ fi
 export VITE_IS_DOCKER="${VITE_IS_DOCKER:-true}"
 
 cd "$PROJECT_ROOT/frontend"
-npm ci
+if [ -d "node_modules" ] && [ "node_modules" -nt "package-lock.json" ]; then
+  echo "  → 依赖已安装，跳过 npm ci"
+else
+  npm ci
+fi
 npm run build

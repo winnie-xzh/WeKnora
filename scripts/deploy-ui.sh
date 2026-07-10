@@ -1,98 +1,89 @@
 #!/usr/bin/env bash
-# 清除代理环境变量（Mac 上 Surge/Clash 会干扰 ACR 连接）
-unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY
 #
-# WeKnora 前端部署脚本
-#
-# 只构建和部署前端（UI）服务，不涉及后端。
-# 后端部署请使用：./scripts/deploy-backend.sh
+# WeKnora 前端一键部署脚本
 #
 # 用法
 #   ./scripts/deploy-ui.sh
+#   WEKNORA_VERSION=v1.2.3 ./scripts/deploy-ui.sh  # 指定版本标签
+#
+# 环境变量（同 deploy-backend.sh，详见 scripts/deploy-common.sh）
 #
 # 前置条件：
-#   - git 已推送到 fork（winnie-xzh/WeKnora）
-#   - SSH 密钥路径正确
+#   - SSH 密钥可连接服务器
 #   - ACR 已配置（公网端点、命名空间、仓库已创建）
+#   - （可选）scripts/.acr-cred 永久凭证，免 aliyun CLI 调用
 #
 set -euo pipefail
 
 START_TIME=$(date +%s)
 
-SSH_KEY="/Users/winnie/Documents/惠民卡资料/gxlyykt.pem"
-HOST="root@8.134.215.118"
-SSH_OPTS="-o ServerAliveInterval=30 -o ServerAliveCountMax=3"
-ACR_REGISTRY="gz3-registry.cn-guangzhou.cr.aliyuncs.com"
-ACR_NAMESPACE="weknora"
+# ── 定位脚本目录并加载公共库 ──
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "${SCRIPT_DIR}/deploy-common.sh"
 
-echo "=== Step 1: 提交代码到 GitHub ==="
 cd "$(dirname "$0")/.."
-git add -A
-git status --short
-read -p "Commit message [auto deploy]: " msg
-git commit -m "${msg:-auto deploy: $(date +%F)}"
-git push fork main
-echo "--- 提交完成 ---"
 
-echo "=== Step 2: 构建并推送前端镜像 ==="
-echo "前端是 nginx + 静态文件，Mac 本地构建。"
+echo "=== WeKnora 前端部署 ==="
+echo "  版本:     ${WEKNORA_VERSION}"
+echo "  ACR:      ${ACR_REGISTRY}/${ACR_NAMESPACE}"
+echo "  服务器:   ${SSH_HOST}"
 echo ""
 
-# 获取 ACR 临时 Token
-ACR_TOKEN=$(aliyun cr GetAuthorizationToken --InstanceId cri-j5gbox3b9osyqjxy --RegionId cn-guangzhou 2>&1 | python3 -c "
-import sys,json
-d=json.load(sys.stdin)
-print(d['AuthorizationToken'])
-")
+# ── ACR 认证 ──
+acr_auth
 
-# 登录 ACR
-echo "登录 ACR..."
-echo "$ACR_TOKEN" | docker login --username=cr_temp_user --password-stdin "$ACR_REGISTRY" 2>&1
+# ── Step 1: 本地构建并推送 ──
+echo "=== Step 1: 构建并推送前端镜像 ==="
 
-# 构建前端（指定 amd64 避免 Mac arm64 架构问题）
-VITE_IS_DOCKER=true ./scripts/build_frontend_dist.sh 2>&1 | grep -E 'built in|error'
-docker build --platform=linux/amd64 -t weknora-ui:latest -f frontend/Dockerfile frontend/ 2>&1 | tail -3
+acr_login
+_tick
 
-docker tag weknora-ui:latest "$ACR_REGISTRY/$ACR_NAMESPACE/ui:latest"
-docker push "$ACR_REGISTRY/$ACR_NAMESPACE/ui:latest" 2>&1 | tail -3
-echo "--- ui 镜像已推送到 ACR ---"
+echo "编译前端静态资源..."
+VITE_IS_DOCKER=true ./scripts/build_frontend_dist.sh > /tmp/build-ui.log 2>&1
+_tick
 
-echo "=== Step 3: 服务器部署（只更新前端） ==="
+echo "构建 Docker 镜像..."
+docker build --platform=linux/amd64 \
+    -t "weknora-ui:${WEKNORA_VERSION}" \
+    -f frontend/Dockerfile frontend/ > /dev/null 2>&1
+_tick
+
+echo "推送镜像到 ACR..."
+docker tag "weknora-ui:${WEKNORA_VERSION}" "$(image_full_name ui)"
+docker push "$(image_full_name ui)" 2>&1 | grep 'digest:'
+_tick
+
+# ── Step 2: 服务器拉取并重启 ──
 echo ""
+echo "=== Step 2: 服务器部署 ==="
 
-# 获取新的临时 Token（旧的可能已过期）
-ACR_TOKEN=$(aliyun cr GetAuthorizationToken --InstanceId cri-j5gbox3b9osyqjxy --RegionId cn-guangzhou 2>&1 | python3 -c "
-import sys,json
-d=json.load(sys.stdin)
-print(d['AuthorizationToken'])
-")
-
-ssh -i $SSH_KEY $SSH_OPTS $HOST "
+REMOTE_SCRIPT=$(cat << ENDSSH
 set -euo pipefail
 
-cd /root/WeKnora-new
+cd ${REMOTE_REPO_PATH}
 
 echo '--- 登录 ACR ---'
-echo '$ACR_TOKEN' | docker login --username=cr_temp_user --password-stdin $ACR_REGISTRY 2>&1
+echo '${ACR_AUTH_PASS}' | docker login --username='${ACR_AUTH_USER}' --password-stdin ${ACR_REGISTRY} 2>&1
 
 echo '--- 拉取最新前端镜像 ---'
-docker compose -p weknora pull frontend 2>&1 | tail -5
+WEKNORA_VERSION='${WEKNORA_VERSION}' docker compose -p weknora pull frontend
 
 echo '--- 重启前端服务 ---'
 docker compose -p weknora rm -fs frontend 2>/dev/null || true
-FRONTEND_PORT=8081 docker compose -p weknora up -d frontend --no-deps
+FRONTEND_PORT=8081 WEKNORA_VERSION='${WEKNORA_VERSION}' docker compose -p weknora up -d frontend --no-deps
 
 echo '=== 部署完成 ==='
-sleep 3
 docker compose -p weknora ps --format 'table {{.Name}}\t{{.Image}}\t{{.Status}}'
 echo ''
-curl -s http://localhost:8081/ | grep -o '<title>.*</title>'
-"
+curl -s http://localhost:8081/ | grep -o '<title>.*</title>' || echo '(页面检查跳过)'
+ENDSSH
+)
+
+ssh -i "$SSH_KEY" $SSH_OPTS "$SSH_HOST" "$REMOTE_SCRIPT"
+_tick
 
 echo ""
 echo "=== 全部完成 ==="
-echo ""
 ELAPSED=$(( $(date +%s) - START_TIME ))
-printf "⏱ 总耗时: %dm%02ds\n" $((ELAPSED/60)) $((ELAPSED%60))
-echo ""
-echo "后端部署请使用：./scripts/deploy-backend.sh"
+printf "⏱ 总耗时: %dm%02ds\n" $((ELAPSED / 60)) $((ELAPSED % 60))
+echo "部署版本: ${WEKNORA_VERSION}"
