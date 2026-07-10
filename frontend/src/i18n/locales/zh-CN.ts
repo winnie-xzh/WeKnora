@@ -315,8 +315,8 @@ export default {
   resourceOrigin: {
     mine: "我创建",
     mineTooltip: "由当前用户创建",
-    tenant: "本空间",
-    tenantTooltip: "本空间其他成员创建",
+    tenant: "空间",
+    tenantTooltip: "空间其他成员创建",
     tenantTooltipWithCreator: "由 {creator} 创建",
     space: "共享空间",
     spaceTooltip: "来自共享空间「{space}」",
