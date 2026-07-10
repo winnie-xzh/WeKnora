@@ -2,6 +2,7 @@
 FROM golang:1.26-bookworm AS builder
 
 WORKDIR /app
+ENV GOPROXY=${GOPROXY}
 
 # 通过构建参数接收敏感信息
 ARG GOPRIVATE_ARG
@@ -51,6 +52,7 @@ RUN --mount=type=cache,target=/go/pkg/mod cp -r /go/pkg/mod/github.com/yanyiwu/ 
 FROM debian:12.12-slim
 
 WORKDIR /app
+ENV GOPROXY=${GOPROXY}
 
 ARG APK_MIRROR_ARG
 
