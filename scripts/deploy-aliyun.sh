@@ -9,12 +9,15 @@
 #   1. git 已推送到 fork（winnie-xzh/WeKnora）
 #   2. .env 已备份到 /root/.env.weknora.bak
 #   3. SSH 密钥路径正确
+#   4. ACR 已配置（公网端点、命名空间、仓库已创建）
 #
 set -euo pipefail
 
 SSH_KEY="/Users/winnie/Documents/惠民卡资料/gxlyykt.pem"
 HOST="root@8.134.215.118"
 SSH_OPTS="-o ServerAliveInterval=30 -o ServerAliveCountMax=3"
+ACR_REGISTRY="gz3-registry.cn-guangzhou.cr.aliyuncs.com"
+ACR_NAMESPACE="weknora"
 FULL_DEPLOY=false
 
 while [[ $# -gt 0 ]]; do
@@ -33,96 +36,90 @@ git commit -m "${msg:-auto deploy: $(date +%F)}"
 git push fork main
 echo "--- 提交完成 ---"
 
-echo "=== Step 2: 服务器上拉取代码并构建 ==="
-ssh -i $SSH_KEY $SSH_OPTS $HOST << 'REMOTE'
-set -euo pipefail
+echo "=== Step 2: 构建并推送到 ACR ==="
 
-echo "--- 拉取代码 ---"
-rm -rf /root/WeKnora-new /tmp/WeKnora-clone
-git clone https://github.com/winnie-xzh/WeKnora.git /tmp/WeKnora-clone
-cp -a /tmp/WeKnora-clone /root/WeKnora-new
-rm -rf /tmp/WeKnora-clone
+# 获取 ACR 临时 Token
+ACR_TOKEN=$(aliyun cr GetAuthorizationToken --InstanceId cri-j5gbox3b9osyqjxy --RegionId cn-guangzhou 2>&1 | python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+print(d['AuthorizationToken'])
+")
 
-echo "--- 恢复配置 ---"
-cp /root/.env.weknora.bak /root/WeKnora-new/.env 2>/dev/null || echo "WARN: 没有 .env.bak"
-if [ ! -f /root/WeKnora/config/config.yaml ]; then
-  mkdir -p /root/WeKnora/config
-fi
-cp /root/WeKnora/config/config.yaml /root/WeKnora-new/config/ 2>/dev/null || true
-cp /root/WeKnora-new/.env /root/.env.weknora.bak 2>/dev/null || true
+# 登录 ACR
+echo "登录 ACR..."
+echo "$ACR_TOKEN" | docker login --username=cr_temp_user --password-stdin "$ACR_REGISTRY" 2>&1
 
-cd /root/WeKnora-new
+# 构建前端
+VITE_IS_DOCKER=true ./scripts/build_frontend_dist.sh 2>&1 | grep -E 'built in|error'
+docker build -t weknora-ui:latest -f frontend/Dockerfile frontend/
 
-echo "--- 修改 Dockerfile 镜像源（国内网络） ---"
-sed -i 's|FROM golang:1.26-bookworm AS builder|FROM docker.m.daocloud.io/library/golang:1.26-bookworm AS builder|' docker/Dockerfile.app
-sed -i 's|FROM debian:12.12-slim|FROM docker.m.daocloud.io/library/debian:12.12-slim|' docker/Dockerfile.app
-sed -i 's|FROM nginx:stable-alpine|FROM docker.m.daocloud.io/library/nginx:stable-alpine|' frontend/Dockerfile
-
-echo "--- 注释 UPX 步骤（x86_64 架构不兼容） ---"
-sed -i '/RUN curl.*upx\.github\.io/,+4 s/^/# /' docker/Dockerfile.app
-
-echo "--- 构建 app 镜像 ---"
-nohup docker build -t weknora-app:latest \
+# 构建 app
+echo "构建 app 镜像（后台，可查看日志: tail -f /tmp/build-app.log）..."
+docker build -t weknora-app:latest \
   -f docker/Dockerfile.app \
-  --build-arg APK_MIRROR_ARG=mirrors.aliyun.com \
   --build-arg GOPROXY_ARG=https://goproxy.cn,direct \
   . > /tmp/build-app.log 2>&1 &
-BUILD_PID=$!
-echo "PID: $BUILD_PID | 日志: tail -f /tmp/build-app.log"
+APP_PID=$!
 
+# 先推送前端（app 还在构建）
+docker tag weknora-ui:latest "$ACR_REGISTRY/$ACR_NAMESPACE/ui:latest"
+docker push "$ACR_REGISTRY/$ACR_NAMESPACE/ui:latest" 2>&1 | tail -3
+echo "--- ui 镜像已推送到 ACR ---"
+
+# 等待 app 构建完成
+echo "等待 app 构建..."
 for i in $(seq 1 80); do
   if docker images weknora-app:latest --format '{{.Repository}}' 2>/dev/null | grep -q .; then
-    echo "app 镜像构建完成！"
+    echo "app 镜像构建完成"
     break
   fi
-  if ! kill -0 $BUILD_PID 2>/dev/null; then
-    echo "构建结束，最后日志："
+  if ! kill -0 $APP_PID 2>/dev/null; then
+    echo "构建进程已结束，最终日志："
     tail -5 /tmp/build-app.log
     break
   fi
-  echo "  等待中... (${i}x30s)"
-  sleep 30
+  sleep 15
 done
 
-echo "--- 构建前端镜像 ---"
-VITE_IS_DOCKER=true ./scripts/build_frontend_dist.sh
-docker build -t weknora-ui:latest -f frontend/Dockerfile frontend/
+# 推送 app
+docker tag weknora-app:latest "$ACR_REGISTRY/$ACR_NAMESPACE/app:latest"
+docker push "$ACR_REGISTRY/$ACR_NAMESPACE/app:latest" 2>&1 | tail -3
+echo "--- app 镜像已推送到 ACR ---"
 
-docker tag weknora-app:latest wechatopenai/weknora-app:latest
-docker tag weknora-ui:latest wechatopenai/weknora-ui:latest
+echo "=== Step 3: 服务器部署 ==="
 
-if [ "$FULL_DEPLOY" = true ]; then
-  echo "--- 构建 docreader 镜像 ---"
-  nohup docker build -t weknora-docreader:latest \
-    -f docker/Dockerfile.docreader \
-    --build-arg APT_MIRROR=mirrors.aliyun.com \
-    . > /tmp/build-docreader.log 2>&1 &
-  wait
-  docker tag weknora-docreader:latest wechatopenai/weknora-docreader:latest
-fi
+# 获取新的临时 Token（旧的可能已过期）
+ACR_TOKEN=$(aliyun cr GetAuthorizationToken --InstanceId cri-j5gbox3b9osyqjxy --RegionId cn-guangzhou 2>&1 | python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+print(d['AuthorizationToken'])
+")
 
-echo "--- 确保基础设施容器在运行 ---"
-for svc in WeKnora-postgres WeKnora-redis WeKnora-docreader; do
-  if ! docker ps --filter "name=$svc" --format '{{.Names}}' 2>/dev/null | grep -q .; then
-    s=${svc#WeKnora-}
-    echo "  启动 $svc ..."
-    docker compose -p weknora up -d "$s" --no-deps 2>/dev/null || true
-  fi
-done
+ssh -i $SSH_KEY $SSH_OPTS $HOST "
+set -euo pipefail
 
-echo "--- 替换 app + frontend ---"
+echo '--- 登录 ACR ---'
+echo '$ACR_TOKEN' | docker login --username=cr_temp_user --password-stdin $ACR_REGISTRY 2>&1
+
+echo '--- 拉取最新镜像 ---'
+cd /root/WeKnora-new
+docker compose -p weknora pull app frontend 2>&1 | tail -5
+
+echo '--- 重启服务 ---'
 docker stop WeKnora-app WeKnora-frontend 2>/dev/null || true
 docker rm WeKnora-app WeKnora-frontend 2>/dev/null || true
-docker compose -p weknora up -d app frontend --no-deps
+FRONTEND_PORT=8081 docker compose -p weknora up -d app frontend --no-deps
 
-echo "=== 部署完成 ==="
+echo '=== 部署完成 ==='
 sleep 3
-docker compose -p weknora ps
-echo "--- 健康检查 ---"
+docker compose -p weknora ps --format 'table {{.Name}}\t{{.Image}}\t{{.Status}}'
+echo ''
 curl -s http://localhost:8080/health
-echo ""
-REMOTE
+echo ''
+curl -s http://localhost:8081/ | grep -o '<title>.*</title>'
+"
 
+echo ""
 echo "=== 全部完成 ==="
 echo ""
 echo "快速部署（只更新 app + frontend）："
