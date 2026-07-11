@@ -159,7 +159,7 @@ type GetSystemInfoResponse struct {
 // 编译时注入的版本信息
 var (
 	Version   = "test"
-	Edition   = "Standardv2"
+	Edition   = "standard"
 	CommitID  = "unknown"
 	BuildTime = "unknown"
 	GoVersion = "unknown"
