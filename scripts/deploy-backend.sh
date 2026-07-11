@@ -103,6 +103,7 @@ docker buildx build \
   --target=builder \
   --output type=local,dest=.build-out \
   -f docker/Dockerfile.app \
+  --build-arg APK_MIRROR_ARG=mirrors.aliyun.com \
   --build-arg GOPROXY_ARG=https://goproxy.cn,direct \
   .
 echo "编译完成"
