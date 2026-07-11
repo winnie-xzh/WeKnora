@@ -98,19 +98,16 @@ cd ${REMOTE_REPO_PATH}
 ${GIT_SCRIPT}
 
 echo ""
-echo "--- [quick] Docker 编译（builder 阶段，跳过 final 镜像）---"
-docker buildx build \
-  --target=builder \
-  --output type=local,dest=.build-out \
-  -f docker/Dockerfile.app \
-  --build-arg APK_MIRROR_ARG=mirrors.aliyun.com \
-  --build-arg GOPROXY_ARG=https://goproxy.cn,direct \
-  .
+echo "--- [quick] Docker 编译二进制 ---"
+APK_MIRROR_ARG=mirrors.aliyun.com GOPROXY_ARG=https://goproxy.cn,direct docker compose -p weknora build app 2>&1
 echo "编译完成"
 
-echo "--- [quick] 提取二进制 ---"
-cp .build-out/app/WeKnora ./WeKnora
-rm -rf .build-out
+echo "--- [quick] 从新镜像提取二进制 ---"
+TMP_CONTAINER=\$(docker create gz3-registry.cn-guangzhou.cr.aliyuncs.com/weknora/app:latest)
+if [ -n "\$TMP_CONTAINER" ]; then
+    docker cp \$TMP_CONTAINER:/app/WeKnora ./WeKnora
+    docker rm \$TMP_CONTAINER > /dev/null
+fi
 
 echo "--- [quick] 查找 app 容器 ---"
 CID=\$(docker compose -p weknora ps -q app)
