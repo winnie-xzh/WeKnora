@@ -6,11 +6,11 @@
 #       避免 Mac arm64 → 服务器 x86_64 架构问题。
 #
 # 用法
-#   ./scripts/deploy-backend.sh                         # 完整构建部署（Docker 镜像）
-#   ./scripts/deploy-backend.sh --quick                  # 快速模式：直接编译 + 热替换，跳过 Docker
-#   ./scripts/deploy-backend.sh --no-cache               # 强制重构建
-#   ./scripts/deploy-backend.sh --docreader              # 同时部署 docreader（极少变动）
-#   WEKNORA_VERSION=v1.2.3 ./scripts/deploy-backend.sh   # 指定版本标签（完整模式）
+#   ./scripts/deploy-backend.sh                          # 默认 quick 模式（热替换，~15-20s）
+#   ./scripts/deploy-backend.sh --docker                  # Docker 构建 + 推 ACR + 重启
+#   ./scripts/deploy-backend.sh --docker --no-cache       # 强制重构建
+#   ./scripts/deploy-backend.sh --docreader               # 同时部署 docreader（极少变动）
+#   WEKNORA_VERSION=v1.2.3 ./scripts/deploy-backend.sh    # 有版本标签时自动走 Docker 模式
 #
 # 环境变量（详见 scripts/deploy-common.sh）
 #
@@ -29,20 +29,25 @@ source "${SCRIPT_DIR}/deploy-common.sh"
 
 # ── 解析参数 ──
 DEPLOY_DOCREADER=false
-QUICK_MODE=false
+DOCKER_MODE=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        --docker)        DOCKER_MODE=true; shift ;;
         --no-cache)      NO_CACHE="--no-cache"; shift ;;
-        --quick)         QUICK_MODE=true; shift ;;
         --docreader)     DEPLOY_DOCREADER=true; shift ;;
-        *) echo "用法: $0 [--quick] [--no-cache] [--docreader]"; exit 1 ;;
+        *) echo "用法: $0 [--docker] [--no-cache] [--docreader]"; exit 1 ;;
     esac
 done
 
 cd "$(dirname "$0")/.."
 
-# ── 构建服务列表 ──（docreader 不支持 quick 模式）
+# ── 模式选择 ──
+# 规则：有版本标签（非 latest）或显式 --docker 时走 Docker 模式，否则默认 quick 模式
+if [[ "$WEKNORA_VERSION" != "latest" && -n "${WEKNORA_VERSION:-}" ]]; then
+    DOCKER_MODE=true
+fi
+
 SERVICES=("app")
 if $DEPLOY_DOCREADER; then SERVICES+=("docreader"); fi
 
@@ -52,12 +57,16 @@ echo "  版本:     ${WEKNORA_VERSION}"
 echo "  ACR:      ${ACR_REGISTRY}/${ACR_NAMESPACE}"
 echo "  服务器:   ${SSH_HOST}"
 echo "  仓库路径: ${REMOTE_REPO_PATH}"
-$QUICK_MODE && echo "  模式:     quick（直接编译 + 热替换，不推 ACR）"
+if $DOCKER_MODE; then
+    echo "  模式:     docker（构建 + 推送 ACR + 重启）"
+else
+    echo "  模式:     quick（热替换二进制，不推 ACR）"
+fi
 [ -n "$NO_CACHE" ] && echo "  重构建:   是"
 echo ""
 
-# ── ACR 认证（quick 模式不需要，但预先获取也无妨）──
-if ! $QUICK_MODE; then
+# ── Docker 模式需要 ACR 认证 ──
+if $DOCKER_MODE; then
     acr_auth
 fi
 
@@ -81,15 +90,15 @@ echo "--- 最新提交 ---"
 git log --oneline -3
 '
 
-if $QUICK_MODE; then
-    # ── 快速模式：服务器直接编译 Go，热替换二进制 ──
+if ! $DOCKER_MODE; then
+    # ── 快速模式（默认）：服务器直接编译 Go，热替换二进制 ──
     REMOTE_SCRIPT=$(cat << ENDSSH
 set -euo pipefail
 cd ${REMOTE_REPO_PATH}
 ${GIT_SCRIPT}
 
 echo ""
-echo "--- [quick] 编译 Go 二进制（约 1-2 分钟）---"
+echo "--- [quick] 编译 Go 二进制 ---"
 make build-prod
 echo "编译完成"
 
@@ -102,23 +111,23 @@ if [ -z "\$CID" ]; then
 fi
 echo "容器 ID: \${CID:0:12}"
 
-echo "--- [quick] 热替换二进制（~260MB）---"
+echo "--- [quick] 热替换二进制 ---"
 docker cp ./WeKnora \$CID:/app/WeKnora
 echo "--- [quick] 重启 app ---"
 docker compose -p weknora restart app
 
 echo ""
 echo "=== 部署完成 ==="
-echo "--- 健康检查（等待就绪，最多 60s）---"
-for i in \$(seq 1 20); do
+echo "--- 健康检查 ---"
+for i in \$(seq 1 30); do
     if curl -sf http://localhost:8080/health; then echo ""; echo "app 已就绪"; break; fi
-    [ \$i -eq 20 ] && echo "FAILED (超时)" || sleep 3
+    [ \$i -eq 30 ] && echo "FAILED (超时)" || sleep 1
 done
 ENDSSH
     )
 
 else
-    # ── 完整模式：Docker 构建 → 推送 ACR → 重启 ──
+    # ── Docker 模式：Docker 构建 → 推送 ACR → 重启 ──
     BUILD_ARGS=""
     [ -n "$NO_CACHE" ] && BUILD_ARGS="--no-cache"
     SERVICES_STR=$(IFS=' '; echo "${SERVICES[*]}")
@@ -157,10 +166,10 @@ echo '--- 服务状态 ---'
 docker compose -p weknora ps --format 'table {{.Name}}\t{{.Image}}\t{{.Status}}'
 
 echo ""
-echo '--- 健康检查（等待就绪，最多 60s）---'
-for i in \$(seq 1 20); do
+echo '--- 健康检查（等待就绪，最多 30s）---'
+for i in \$(seq 1 30); do
     if curl -sf http://localhost:8080/health; then echo ""; echo "app 已就绪"; break; fi
-    [ \$i -eq 20 ] && echo "FAILED (超时)" || sleep 3
+    [ \$i -eq 30 ] && echo "FAILED (超时)" || sleep 1
 done
 ENDSSH
     )
@@ -170,6 +179,7 @@ ssh -i "$SSH_KEY" $SSH_OPTS "$SSH_HOST" "$REMOTE_SCRIPT"
 _tick
 
 # ── 汇总 ──
+SERVICES_STR=$(IFS=' '; echo "${SERVICES[*]}")
 echo ""
 echo "=== 全部完成 ==="
 ELAPSED=$(( $(date +%s) - START_TIME ))
