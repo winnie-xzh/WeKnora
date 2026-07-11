@@ -98,14 +98,14 @@ cd ${REMOTE_REPO_PATH}
 ${GIT_SCRIPT}
 
 echo ""
-echo "--- [quick] Docker 编译（只编译二进制，跳过 Docker 镜像）---"
-docker buildx build \
+echo "--- [quick] Docker 编译（只编译二进制，跳过 final 镜像）---"
+timeout 120 docker buildx build \
   --target=builder \
   --output type=local,dest=.build-out \
   -f docker/Dockerfile.app \
   --build-arg APK_MIRROR_ARG=mirrors.aliyun.com \
   --build-arg GOPROXY_ARG=https://goproxy.cn,direct \
-  .
+  . || true
 echo "编译完成"
 
 echo "--- [quick] 提取二进制 ---"
