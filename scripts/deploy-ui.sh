@@ -65,8 +65,12 @@ cd ${REMOTE_REPO_PATH}
 echo '--- 登录 ACR ---'
 echo '${ACR_AUTH_PASS}' | docker login --username='${ACR_AUTH_USER}' --password-stdin ${ACR_REGISTRY} 2>&1
 
-echo '--- 拉取最新前端镜像 ---'
-WEKNORA_VERSION='${WEKNORA_VERSION}' docker compose -p weknora pull frontend
+echo '--- 从 ACR 拉取前端镜像 ---'
+ACR_IMAGE="${ACR_REGISTRY}/${ACR_NAMESPACE}/ui:${WEKNORA_VERSION}"
+docker pull \$ACR_IMAGE
+
+echo '--- 标记为 compose 镜像名 ---'
+docker tag \$ACR_IMAGE "wechatopenai/weknora-ui:${WEKNORA_VERSION}"
 
 echo '--- 重启前端服务 ---'
 docker compose -p weknora rm -fs frontend 2>/dev/null || true

@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
-# ───────────────────────────────────────────────
-#  WeKnora 部署脚本公共库
-#  被 deploy-backend.sh / deploy-ui.sh source 使用
-# ───────────────────────────────────────────────
+# WeKnora 部署脚本公共库
 
 # ── 清除代理环境变量（Mac 上 Surge/Clash 会干扰 ACR 连接）──
 unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY
