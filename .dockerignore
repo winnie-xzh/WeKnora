@@ -30,7 +30,6 @@ frontend/
 WeKnora-Chrome-Extension/
 
 # 构建和部署时不需要的大目录
-docreader/
 docreader/.venv/
 docreader/__pycache__/
 docreader/.pylintrc
