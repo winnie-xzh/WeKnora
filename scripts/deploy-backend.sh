@@ -134,7 +134,7 @@ echo '${ACR_AUTH_PASS}' | docker login --username='${ACR_AUTH_USER}' --password-
 
 echo ""
 echo '--- 构建镜像（服务器原生编译）---'
-docker compose -p weknora build ${BUILD_ARGS} ${SERVICES_STR}
+APK_MIRROR_ARG=mirrors.aliyun.com GOPROXY_ARG=https://goproxy.cn,direct docker compose -p weknora build ${BUILD_ARGS} ${SERVICES_STR}
 echo '构建完成'
 
 echo ""
