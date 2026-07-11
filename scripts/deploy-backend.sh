@@ -91,25 +91,30 @@ git log --oneline -3
 '
 
 if ! $DOCKER_MODE; then
-    # ── 快速模式（默认）：服务器直接编译 Go，热替换二进制 ──
+    # ── 快速模式（默认）：Docker 编译 + 热替换二进制，跳过 ACR ──
     REMOTE_SCRIPT=$(cat << ENDSSH
 set -euo pipefail
 cd ${REMOTE_REPO_PATH}
 ${GIT_SCRIPT}
 
 echo ""
-echo "--- [quick] 编译 Go 二进制 ---"
-make build-prod
+echo "--- [quick] Docker 编译二进制 ---"
+APK_MIRROR_ARG=mirrors.aliyun.com GOPROXY_ARG=https://goproxy.cn,direct docker compose -p weknora build app 2>&1 | tail -5
 echo "编译完成"
 
-echo ""
+echo "--- [quick] 从镜像提取二进制 ---"
+TMP_CONTAINER=\$(docker create gz3-registry.cn-guangzhou.cr.aliyuncs.com/weknora/app:latest)
+if [ -n "\$TMP_CONTAINER" ]; then
+    docker cp \$TMP_CONTAINER:/app/WeKnora ./WeKnora
+    docker rm \$TMP_CONTAINER > /dev/null
+fi
+
 echo "--- [quick] 查找 app 容器 ---"
 CID=\$(docker compose -p weknora ps -q app)
 if [ -z "\$CID" ]; then
     echo "错误: app 容器未运行"
     exit 1
 fi
-echo "容器 ID: \${CID:0:12}"
 
 echo "--- [quick] 热替换二进制 ---"
 docker cp ./WeKnora \$CID:/app/WeKnora
