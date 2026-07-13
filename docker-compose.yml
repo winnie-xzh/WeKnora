@@ -796,7 +796,44 @@ services:
     profiles:
       - full
 
-networks:
+  mcp-gateway:
+    build:
+      context: ./mcp-gateway
+    container_name: WeKnora-mcp-gateway
+    ports:
+      - "${MCP_GATEWAY_PORT:-8083}:8000"
+    environment:
+      # Gateway auth (required for HTTP transport)
+      - MCP_GATEWAY_AUTH_TOKEN=${MCP_GATEWAY_AUTH_TOKEN:-}
+      # Backend service URLs and credentials
+      - PRICING_SERVICE_URL=${PRICING_SERVICE_URL:-http://pricing-api:8080}
+      - PRICING_API_KEY=${PRICING_API_KEY:-}
+      - INVENTORY_SERVICE_URL=${INVENTORY_SERVICE_URL:-http://inventory-api:8080}
+      - INVENTORY_API_TOKEN=${INVENTORY_API_TOKEN:-}
+      - ERP_SERVICE_URL=${ERP_SERVICE_URL:-http://erp-api:5000}
+      - ERP_USERNAME=${ERP_USERNAME:-}
+      - ERP_PASSWORD=${ERP_PASSWORD:-}
+    depends_on: []
+    networks:
+      - WeKnora-network
+    restart: unless-stopped
+    profiles:
+      - full
+
+  # ── Mock 后端服务（开发调试用） ─────────────────────────────
+  mock-pricing:
+    build:
+      context: ./mcp-gateway/examples
+      dockerfile: Dockerfile.mock-pricing
+    container_name: WeKnora-mock-pricing
+    ports:
+      - "${MOCK_PRICING_PORT:-8084}:8080"
+    networks:
+      - WeKnora-network
+    restart: unless-stopped
+    profiles:
+      - dev
+      - full
   WeKnora-network:
     driver: bridge
 

@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mcp-gateway"
+version = "1.0.0"
+description = "MCP Gateway - Centralized Model Context Protocol gateway for enterprise business systems"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "WeKnora Team", email = "support@weknora.com"}
+]
+keywords = ["mcp", "model-context-protocol", "gateway", "enterprise", "weknora"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=1.0.0",
+    "requests>=2.31.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21.0",
+]
+test = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21.0",
+]
+
+[project.scripts]
+mcp-gateway = "mcp_gateway.main:sync_main"
+
+[tool.setuptools]
+packages = ["mcp_gateway"]
+package-data = { mcp_gateway = ["config/*.yaml"] }
+include-package-data = true

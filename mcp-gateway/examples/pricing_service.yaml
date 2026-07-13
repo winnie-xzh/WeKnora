@@ -1,0 +1,56 @@
+# Example: 农产品报价系统（Java）独立配置片段
+# 可复制到 config/gateway.yaml 的 services 列表中使用
+
+- name: "pricing"
+  display_name: "农产品报价系统"
+  description: "农产品市场行情查询系统 (Java)"
+  base_url: "${PRICING_SERVICE_URL:-http://pricing-api:8080}"
+  timeout: 30
+  auth:
+    type: api_key
+    key: "X-API-Key"
+    value: "${PRICING_API_KEY:-}"
+  tools:
+    - name: "get_quote"
+      description: "查询指定农产品的当前报价"
+      method: GET
+      path: "/api/quotes/{product}"
+      parameters:
+        - name: "product"
+          type: "string"
+          description: "农产品名称"
+          required: true
+          in: path
+        - name: "market"
+          type: "string"
+          description: "市场名称"
+          required: false
+          in: query
+
+    - name: "get_price_history"
+      description: "查询指定农产品历史价格走势"
+      method: GET
+      path: "/api/quotes/{product}/history"
+      parameters:
+        - name: "product"
+          type: "string"
+          description: "农产品名称"
+          required: true
+          in: path
+        - name: "days"
+          type: "integer"
+          description: "历史天数"
+          required: false
+          in: query
+          default: 30
+
+    - name: "list_products"
+      description: "获取农产品分类目录"
+      method: GET
+      path: "/api/products"
+      parameters:
+        - name: "category"
+          type: "string"
+          description: "分类"
+          required: false
+          in: query

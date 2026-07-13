@@ -1,0 +1,8 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+COPY mock_pricing_api.py .
+
+EXPOSE 8080
+
+CMD ["python3", "mock_pricing_api.py", "--port", "8080"]

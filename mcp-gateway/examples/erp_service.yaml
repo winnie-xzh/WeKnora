@@ -1,0 +1,55 @@
+# Example: ERP 系统（.NET）独立配置片段
+# 可复制到 config/gateway.yaml 的 services 列表中使用
+
+- name: "erp"
+  display_name: "ERP 系统"
+  description: "企业资源计划系统 (.NET)"
+  base_url: "${ERP_SERVICE_URL:-http://erp-api:5000}"
+  timeout: 30
+  auth:
+    type: basic
+    username: "${ERP_USERNAME:-}"
+    password: "${ERP_PASSWORD:-}"
+  tools:
+    - name: "get_order"
+      description: "查询订单详情"
+      method: GET
+      path: "/api/orders/{order_id}"
+      parameters:
+        - name: "order_id"
+          type: "string"
+          description: "订单编号"
+          required: true
+          in: path
+
+    - name: "list_orders"
+      description: "按条件查询订单列表"
+      method: GET
+      path: "/api/orders"
+      parameters:
+        - name: "status"
+          type: "string"
+          description: "订单状态"
+          required: false
+          in: query
+        - name: "start_date"
+          type: "string"
+          description: "起始日期 YYYY-MM-DD"
+          required: false
+          in: query
+        - name: "end_date"
+          type: "string"
+          description: "结束日期 YYYY-MM-DD"
+          required: false
+          in: query
+
+    - name: "get_customer"
+      description: "查询客户信息"
+      method: GET
+      path: "/api/customers/{customer_id}"
+      parameters:
+        - name: "customer_id"
+          type: "string"
+          description: "客户编码"
+          required: true
+          in: path
