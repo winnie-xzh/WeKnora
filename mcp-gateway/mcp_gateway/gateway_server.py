@@ -40,12 +40,10 @@ def _network_auth_token() -> str:
 def _require_network_auth(transport: str) -> str:
     token = _network_auth_token()
     if transport in ("sse", "http") and not token:
-        logger.error(
-            "MCP_GATEWAY_AUTH_TOKEN is required for %s transport. "
-            "Set a strong shared secret.",
-            transport,
+        logger.warning(
+            "MCP_GATEWAY_AUTH_TOKEN is empty — network transport will allow "
+            "unauthenticated connections (only safe on isolated internal networks)."
         )
-        sys.exit(1)
     return token
 
 
@@ -85,7 +83,7 @@ class MCPAuthMiddleware:
         elif "x-mcp-auth-token" in headers:
             provided = headers["x-mcp-auth-token"]
 
-        if not provided or not secrets.compare_digest(provided, self.token):
+        if self.token and (not provided or not secrets.compare_digest(provided, self.token)):
             body = b'{"error":"unauthorized"}'
             await send(
                 {
