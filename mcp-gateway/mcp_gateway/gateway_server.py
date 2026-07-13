@@ -52,19 +52,26 @@ def _require_network_auth(transport: str) -> str:
 class MCPAuthMiddleware:
     """ASGI middleware that gates network transports behind a shared secret."""
 
-    def __init__(self, app, token: str):
+    def __init__(self, app, token: str, tool_count: int = 0):
         self.app = app
         self.token = token
+        self._tool_count = tool_count
 
     async def __call__(self, scope, receive, send):
         if scope.get("type") != "http":
             await self.app(scope, receive, send)
             return
 
-        # 健康检查跳过认证
+        # 健康检查跳过认证，直接在中间件处理
         raw_path = scope.get("raw_path", b"").decode("latin-1", errors="replace")
-        if raw_path == "/health":
-            await self.app(scope, receive, send)
+        if raw_path == "/health" or scope.get("path") == "/health":
+            body = b'{"status":"ok","service":"mcp-gateway","tools":' + str(self._tool_count).encode() + b'}'
+            await send({
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"content-type", b"application/json"]],
+            })
+            await send({"type": "http.response.body", "body": body})
             return
 
         headers = {
@@ -221,25 +228,13 @@ async def run_sse(host: str, port: int):
 
     tool_count = _get_registry().tool_count
 
-    async def health_endpoint(scope, receive, send):
-        """健康检查 — 跳过认证中间件。"""
-        if scope.get("method") == "GET":
-            body = b'{"status":"ok","service":"mcp-gateway","tools":' + str(tool_count).encode() + b'}'
-            await send({
-                "type": "http.response.start",
-                "status": 200,
-                "headers": [[b"content-type", b"application/json"]],
-            })
-            await send({"type": "http.response.body", "body": body})
-
     starlette_app = Starlette(
         routes=[
-            Mount("/health", app=health_endpoint),
             Mount("/sse", app=handle_sse),
             Mount("/messages/", app=sse.handle_post_message),
         ]
     )
-    starlette_app = MCPAuthMiddleware(starlette_app, auth_token)
+    starlette_app = MCPAuthMiddleware(starlette_app, auth_token, tool_count)
 
     logger.info("Starting SSE MCP gateway on %s:%d (%d tools)", host, port, tool_count)
     config = uvicorn.Config(starlette_app, host=host, port=port, log_level="info")
@@ -275,24 +270,13 @@ async def run_http(host: str, port: int):
 
     tool_count = _get_registry().tool_count
 
-    async def health_endpoint(scope, receive, send):
-        if scope.get("method") == "GET":
-            body = b'{"status":"ok","service":"mcp-gateway","tools":' + str(tool_count).encode() + b'}'
-            await send({
-                "type": "http.response.start",
-                "status": 200,
-                "headers": [[b"content-type", b"application/json"]],
-            })
-            await send({"type": "http.response.body", "body": body})
-
     starlette_app = Starlette(
         routes=[
-            Mount("/health", app=health_endpoint),
             Mount("/", app=session_manager.handle_request),
         ],
         lifespan=lifespan,
     )
-    starlette_app = MCPAuthMiddleware(starlette_app, auth_token)
+    starlette_app = MCPAuthMiddleware(starlette_app, auth_token, tool_count)
 
     logger.info("Starting Streamable HTTP MCP gateway on %s:%d", host, port)
     config = uvicorn.Config(starlette_app, host=host, port=port, log_level="info")
