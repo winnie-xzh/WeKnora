@@ -98,7 +98,7 @@ async def async_main():
         os.environ["MCP_GATEWAY_CONFIG"] = args.config
 
     # import after path setup
-    from gateway_server import preload, run_stdio, run_sse, run_http
+    from mcp_gateway.gateway_server import preload, run_stdio, run_sse, run_http
 
     # pre-load registry to fail fast on config errors
     try:

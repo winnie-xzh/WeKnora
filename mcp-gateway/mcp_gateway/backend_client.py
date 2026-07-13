@@ -9,9 +9,9 @@ from typing import Any
 
 import requests
 
-from .auth import apply_headers, get_auth
-from .errors import BackendHTTPError, BackendTimeoutError, BackendUnavailableError
-from .registry import ParameterDef, ServiceConfig, ToolDef
+from mcp_gateway.auth import apply_headers, get_auth
+from mcp_gateway.errors import BackendHTTPError, BackendTimeoutError, BackendUnavailableError
+from mcp_gateway.registry import ParameterDef, ServiceConfig, ToolDef
 
 logger = logging.getLogger(__name__)
 

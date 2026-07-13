@@ -14,7 +14,7 @@ from typing import Any, Optional
 import mcp.types as types
 import yaml
 
-from .auth import AuthConfig, AuthType
+from mcp_gateway.auth import AuthConfig, AuthType
 
 # ── env-var reference: ${VAR} or ${VAR:-default} ──────────────────────
 _ENV_REF_RE = re.compile(r"\$\{([^}:]+)(?::-(.*?))?\}")

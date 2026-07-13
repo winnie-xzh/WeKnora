@@ -16,9 +16,9 @@ import requests
 from mcp.server import NotificationOptions, Server
 from mcp.server.models import InitializationOptions
 
-from .backend_client import execute_rest_call
-from .errors import GatewayError, ToolNotFoundError, format_error
-from .registry import Registry
+from mcp_gateway.backend_client import execute_rest_call
+from mcp_gateway.errors import GatewayError, ToolNotFoundError, format_error
+from mcp_gateway.registry import Registry
 
 logger = logging.getLogger(__name__)
 
