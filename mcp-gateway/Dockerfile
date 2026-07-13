@@ -13,4 +13,4 @@ ENV MCP_PORT=8000
 
 EXPOSE 8000
 
-CMD ["mcp-gateway", "--transport", "http", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["mcp-gateway", "--transport", "sse", "--host", "0.0.0.0", "--port", "8000"]
