@@ -834,6 +834,8 @@ services:
     profiles:
       - dev
       - full
+
+networks:
   WeKnora-network:
     driver: bridge
 
