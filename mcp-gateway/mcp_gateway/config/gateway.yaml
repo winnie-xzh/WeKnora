@@ -34,7 +34,7 @@ services:
             in: path
           - name: "market"
             type: "string"
-            description: "市场名称，如 北京新发地、上海江桥"
+            description: "市场名称，如 南宁海吉星、柳州海吉星、桂林五里店"
             required: false
             in: query
           - name: "date"
