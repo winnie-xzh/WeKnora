@@ -80,9 +80,11 @@ LOCAL_HASH=$(git rev-parse HEAD)
 REMOTE_HASH=$(git rev-parse origin/main)
 if [ "$LOCAL_HASH" = "$REMOTE_HASH" ]; then
     echo "代码已是最新 (${LOCAL_HASH:0:8})，跳过拉取"
+elif git merge-base --is-ancestor origin/main HEAD 2>/dev/null; then
+    echo "本地领先于远程 (HEAD=${LOCAL_HASH:0:8} 领先 origin/main=${REMOTE_HASH:0:8})，跳过拉取"
 else
     echo "更新: ${LOCAL_HASH:0:8} → ${REMOTE_HASH:0:8}"
-    git pull origin main
+    git pull --rebase origin main
 fi
 echo "--- 最新提交 ---"
 git log --oneline -3
