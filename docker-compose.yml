@@ -33,6 +33,10 @@ services:
         - APK_MIRROR_ARG=${APK_MIRROR_ARG:-}
         - GOLANG_IMAGE=gz3-registry.cn-guangzhou.cr.aliyuncs.com/weknora/golang:1.26-bookworm
         - GOPROXY_ARG=https://goproxy.cn,direct
+        - VERSION_ARG=${WEKNORA_VERSION:-}
+        - COMMIT_ID_ARG=${COMMIT_ID:-}
+        - BUILD_TIME_ARG=${BUILD_TIME:-}
+        - GO_VERSION_ARG=${GO_VERSION:-}
     ports:
       - "${APP_PORT:-8080}:8080"
     volumes:

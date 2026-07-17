@@ -129,7 +129,7 @@ func NewRouter(params RouterParams) *gin.Engine {
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status":  "ok",
-			"version": "0.6.3",
+			"version": "0.7.0",
 		})
 	})
 
