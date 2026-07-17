@@ -97,9 +97,9 @@ ${GIT_SCRIPT}
 
 echo ""
 echo "--- [quick] Docker 编译二进制 ---"
-eval "$(./scripts/get_version.sh env)" && \
+eval "\$(./scripts/get_version.sh env)" && \
 APK_MIRROR_ARG=mirrors.aliyun.com GOPROXY_ARG=https://goproxy.cn,direct \
-VERSION_ARG="${VERSION}" COMMIT_ID_ARG="${COMMIT_ID}" BUILD_TIME_ARG="${BUILD_TIME}" GO_VERSION_ARG="${GO_VERSION}" \
+VERSION_ARG="\${VERSION}" COMMIT_ID_ARG="\${COMMIT_ID}" BUILD_TIME_ARG="\${BUILD_TIME}" GO_VERSION_ARG="\${GO_VERSION}" \
 docker compose -p weknora build app 2>&1
 echo "编译完成"
 
