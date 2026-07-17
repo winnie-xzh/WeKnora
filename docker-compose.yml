@@ -801,7 +801,6 @@ services:
       - full
 
   mcp-gateway:
-    command: ["mcp-gateway", "--transport", "sse", "--host", "0.0.0.0", "--port", "8000"]
     build:
       context: ./mcp-gateway
     command: ["mcp-gateway", "--transport", "http", "--host", "0.0.0.0", "--port", "8000"]
